@@ -1,0 +1,473 @@
+<?php
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * @package    block_moodle_sence
+ * @copyright  2026 John Rivera
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+define('BLOCK_MOODLE_SENCE_URL_LOGIN_PROD', 'https://sistemas.sence.cl/rce/Registro/IniciarSesion');
+define('BLOCK_MOODLE_SENCE_URL_LOGOUT_PROD', 'https://sistemas.sence.cl/rce/Registro/CerrarSesion');
+define('BLOCK_MOODLE_SENCE_URL_LOGIN_TEST', 'https://sistemas.sence.cl/rcetest/Registro/IniciarSesion');
+define('BLOCK_MOODLE_SENCE_URL_LOGOUT_TEST', 'https://sistemas.sence.cl/rcetest/Registro/CerrarSesion');
+
+require_once(__DIR__ . '/classes/rut_helper.php');
+require_once(__DIR__ . '/classes/session_manager.php');
+if (!function_exists('groups_get_all_groups')) {
+    global $CFG;
+    require_once($CFG->dirroot . '/lib/grouplib.php');
+}
+
+use block_moodle_sence\rut_helper;
+use block_moodle_sence\session_manager;
+
+/**
+ * @return string
+ */
+function block_moodle_sence_get_rut_otec(): string {
+    $rut = get_config('block_moodle_sence', 'rutotec');
+    if (empty($rut) && get_config('local_moodle_sicsence', 'credencialesjson')) {
+        $json = json_decode((string) get_config('local_moodle_sicsence', 'credencialesjson'), true);
+        if (!empty($json[0]['rut'])) {
+            $rut = $json[0]['rut'];
+        }
+    }
+    if (empty($rut)) {
+        $rut = get_config('block_sence', 'rutotec');
+    }
+    return rut_helper::format_run($rut ?? '');
+}
+
+/**
+ * Token OTEC: trim + mayúsculas al enviar (como RTS/SENCE).
+ *
+ * @return string
+ */
+function block_moodle_sence_get_token(): string {
+    $token = (string) get_config('block_moodle_sence', 'tokenotec');
+    if ($token === '' && get_config('local_moodle_sicsence', 'credencialesjson')) {
+        $json = json_decode((string) get_config('local_moodle_sicsence', 'credencialesjson'), true);
+        if (!empty($json[0]['token'])) {
+            $token = $json[0]['token'];
+        }
+    }
+    if ($token === '') {
+        $token = (string) get_config('block_sence', 'tokenotec');
+    }
+    $token = trim($token);
+    return $token === '' ? '' : strtoupper($token);
+}
+
+/**
+ * @return bool
+ */
+function block_moodle_sence_is_test_mode(): bool {
+    return (bool) get_config('block_moodle_sence', 'testmode');
+}
+
+/**
+ * @return array{login:string,logout:string}
+ */
+function block_moodle_sence_get_rce_urls(): array {
+    if (block_moodle_sence_is_test_mode()) {
+        return [
+            'login' => BLOCK_MOODLE_SENCE_URL_LOGIN_TEST,
+            'logout' => BLOCK_MOODLE_SENCE_URL_LOGOUT_TEST,
+        ];
+    }
+    return [
+        'login' => BLOCK_MOODLE_SENCE_URL_LOGIN_PROD,
+        'logout' => BLOCK_MOODLE_SENCE_URL_LOGOUT_PROD,
+    ];
+}
+
+/**
+ * @param string $raw config_codigocurso
+ * @return array{codsence:string,codigocurso:string,raw:string}
+ */
+function block_moodle_sence_parse_course_codes(string $raw): array {
+    $raw = trim($raw);
+    if ($raw === '' || strcasecmp($raw, 'MULTIPLES') === 0) {
+        return [
+            'codsence' => '',
+            'codigocurso' => '',
+            'raw' => $raw,
+        ];
+    }
+    $parts = array_map('trim', explode('/', $raw));
+    if (count($parts) >= 2) {
+        return [
+            'codsence' => $parts[0],
+            'codigocurso' => $parts[1],
+            'raw' => $raw,
+        ];
+    }
+    return [
+        'codsence' => strlen($raw) >= 10 ? substr($raw, 0, 10) : $raw,
+        'codigocurso' => $raw,
+        'raw' => $raw,
+    ];
+}
+
+/**
+ * Resuelve CodSence / CodigoCurso / idacción según config, línea y grupos SENCE-*.
+ *
+ * @param \stdClass $config
+ * @param int $courseid
+ * @param int $userid
+ * @return array{codsence:string,codigocurso:string,idaccion:string,raw:string,fromgroup:bool}
+ */
+function block_moodle_sence_resolve_runtime_codes(\stdClass $config, int $courseid, int $userid): array {
+    $raw = trim((string) ($config->codigocurso ?? ''));
+    $linea = (int) ($config->lineasdecap ?? 3);
+    $parsed = block_moodle_sence_parse_course_codes($raw);
+    $ismultiples = (strcasecmp($raw, 'MULTIPLES') === 0);
+
+    $best = null;
+    $groups = groups_get_all_groups($courseid, $userid, 0, 'g.id,g.name,g.idnumber,g.description');
+    foreach ($groups as $group) {
+        $actionid = null;
+        if (preg_match('/^SENCE-(\d+)/i', (string) $group->name, $m)) {
+            $actionid = (int) $m[1];
+        } else if (!empty($group->idnumber)) {
+            $idnumber = trim((string) $group->idnumber);
+            if (preg_match('/^SENCE-?(\d+)$/i', $idnumber, $m)) {
+                $actionid = (int) $m[1];
+            } else if (ctype_digit($idnumber)) {
+                $actionid = (int) $idnumber;
+            }
+        }
+        if ($actionid === null) {
+            continue;
+        }
+        if ($best === null || $best['idaccion'] < $actionid) {
+            $best = [
+                'idaccion' => $actionid,
+                'description' => trim(strip_tags((string) ($group->description ?? ''))),
+                'name' => (string) $group->name,
+            ];
+        }
+    }
+
+    $fromgroup = ($best !== null);
+    $groupaccion = $fromgroup ? (string) $best['idaccion'] : '';
+    $groupdesc = $fromgroup ? $best['description'] : '';
+
+    $codsence = $parsed['codsence'];
+    $codigocurso = $parsed['codigocurso'];
+
+    if ($ismultiples) {
+        $codsence = $groupdesc;
+        $codigocurso = $groupaccion !== '' ? $groupaccion : $groupdesc;
+    }
+
+    if ($linea === 1) {
+        $codsence = ' ';
+        $codigocurso = $groupaccion !== '' ? $groupaccion : $codigocurso;
+    } else {
+        // Línea 3/6: CodSence = primer segmento (o descripción MULTIPLES); CodigoCurso = idacción grupo o 2º segmento.
+        if ($groupaccion !== '') {
+            $codigocurso = $groupaccion;
+        }
+    }
+
+    $idaccion = $groupaccion !== '' ? $groupaccion : $codigocurso;
+
+    return [
+        'codsence' => $codsence,
+        'codigocurso' => $codigocurso,
+        'idaccion' => (string) $idaccion,
+        'raw' => $raw,
+        'fromgroup' => $fromgroup,
+    ];
+}
+
+/**
+ * @param \stdClass $config
+ * @param int $courseid
+ * @param int $userid
+ * @return bool
+ */
+function block_moodle_sence_user_is_becado(\stdClass $config, int $courseid, int $userid): bool {
+    $raw = trim((string) ($config->grupobecas ?? ''));
+    if ($raw === '') {
+        return false;
+    }
+    $becas = array_filter(array_map('trim', explode(',', $raw)));
+    if (empty($becas)) {
+        return false;
+    }
+    $groups = groups_get_all_groups($courseid, $userid, 0, 'g.id,g.name');
+    $names = array_map(static function ($g) {
+        return $g->name;
+    }, $groups);
+    return count(array_intersect($becas, $names)) > 0;
+}
+
+/**
+ * Cuenta registros previos en block_sence (asistencia ya informada).
+ *
+ * @param string $run RUT con o sin guión
+ * @param string $codcurso
+ * @param string $idaccion
+ * @return int
+ */
+function block_moodle_sence_has_prior_registration(string $run, string $codcurso, string $idaccion): int {
+    global $DB;
+
+    if ($codcurso === '' || $idaccion === '') {
+        return 0;
+    }
+
+    $runbody = rut_helper::run_body($run);
+    $runfmt = rut_helper::format_run($run);
+    $candidates = array_values(array_unique(array_filter([$runbody, $runfmt])));
+
+    if (empty($candidates)) {
+        return 0;
+    }
+
+    list($insql, $params) = $DB->get_in_or_equal($candidates, SQL_PARAMS_NAMED, 'run');
+    $params['codcurso'] = $codcurso;
+    $params['idaccion'] = $idaccion;
+
+    return (int) $DB->count_records_select(
+        'block_sence',
+        "runalumno $insql AND codcurso = :codcurso AND idaccion = :idaccion",
+        $params
+    );
+}
+
+/**
+ * Glosas Anexo 2 (manual RCE). Preferencia por lang string glosa{code}.
+ *
+ * @param int|string $code
+ * @return string
+ */
+function block_moodle_sence_glosa_message($code): string {
+    $code = (int) $code;
+    $key = 'glosa' . $code;
+    if (get_string_manager()->string_exists($key, 'block_moodle_sence')) {
+        return get_string($key, 'block_moodle_sence');
+    }
+
+    static $fallback = [
+        100 => 'Contraseña incorrecta',
+        200 => 'Parámetros vacíos',
+        201 => 'Parámetro UrlError sin datos',
+        202 => 'Parámetro UrlError con formato incorrecto',
+        203 => 'Parámetro UrlRetoma con formato incorrecto',
+        204 => 'El Código SENCE tiene formato incorrecto',
+        205 => 'El Código Curso tiene formato incorrecto',
+        206 => 'Línea de capacitación incorrecta',
+        207 => 'Parámetro RunAlumno incorrecto',
+        208 => 'RUN Alumno no autorizado para realizar el curso.',
+        209 => 'RUT del OTEC está incorrecto',
+        210 => 'Inicio de Sesión en SENCE Expirado. Vuelva a intentar.',
+        211 => 'Token no corresponde a la empresa',
+        212 => 'Token caducado',
+        300 => 'Error interno SENCE',
+        301 => 'ID de Acción/Folio Sence/SENCENET incorrecto o Línea de Capacitación incorrecta',
+        302 => 'Error interno SENCE',
+        303 => 'Token no existe o su formato es incorrecto',
+        304 => 'Error interno SENCE',
+        305 => 'Error interno SENCE',
+        306 => 'El Código Curso no corresponde al Código SENCE',
+        307 => 'El Código Curso no tiene Modalidad E-Learning',
+        308 => 'El Código Curso no corresponde al RUT OTEC.',
+        309 => 'Las fechas de ejecución comunicadas para el Código Curso no corresponden a la fecha actual.',
+        310 => 'El Código Curso está en estado Terminado o Anulado.',
+        311 => 'RUT ingresado en el Login de Clave Única no se corresponde con RUT del usuario en la plataforma',
+        312 => 'No se pudo completar la autenticación con Clave Única.',
+    ];
+
+    if (isset($fallback[$code])) {
+        return $fallback[$code];
+    }
+    return get_string('senceerror', 'block_moodle_sence', $code);
+}
+
+/**
+ * RUT alumno: idnumber o username; sin puntos.
+ *
+ * @param \stdClass $user
+ * @return string
+ */
+function block_moodle_sence_resolve_user_run(\stdClass $user): string {
+    $raw = trim((string) ($user->idnumber ?? ''));
+    if ($raw === '') {
+        $raw = trim((string) ($user->username ?? ''));
+    }
+    $raw = str_replace('.', '', $raw);
+    return rut_helper::format_run($raw);
+}
+
+/**
+ * Valida formato RUT chileno básico (9–10 chars con guión).
+ *
+ * @param string $run
+ * @return bool
+ */
+function block_moodle_sence_is_valid_run(string $run): bool {
+    $len = strlen($run);
+    return $len >= 9 && $len <= 10 && strpos($run, '-') !== false;
+}
+
+/**
+ * En rcetest: CodSence vacío → -1; CodigoCurso corto (<7) → -1. Conserva espacio de línea 1.
+ *
+ * @param string $codsence
+ * @param string $codigocurso
+ * @return array{0:string,1:string}
+ */
+function block_moodle_sence_apply_testmode_codes(string $codsence, string $codigocurso): array {
+    if (!block_moodle_sence_is_test_mode()) {
+        return [$codsence, $codigocurso];
+    }
+    if ($codsence !== ' ' && trim($codsence) === '') {
+        $codsence = '-1';
+    }
+    if (strlen($codigocurso) < 7) {
+        $codigocurso = '-1';
+    }
+    return [$codsence, $codigocurso];
+}
+
+/**
+ * @param int $courseid
+ * @param int $instanceid
+ * @param string $type success|error
+ * @return \moodle_url
+ */
+function block_moodle_sence_callback_url(int $courseid, int $instanceid, string $type): \moodle_url {
+    $token = session_manager::sign_callback($courseid, $instanceid, $type);
+    return new \moodle_url('/blocks/moodle_sence/callback.php', [
+        'courseid' => $courseid,
+        'instanceid' => $instanceid,
+        'type' => $type,
+        'token' => $token,
+    ]);
+}
+
+/**
+ * @param \stdClass $config
+ * @param int $courseid
+ * @param int $instanceid
+ * @param \stdClass $user
+ * @return array
+ */
+function block_moodle_sence_build_login_fields(
+    \stdClass $config,
+    int $courseid,
+    int $instanceid,
+    \stdClass $user
+): array {
+    $codes = block_moodle_sence_resolve_runtime_codes($config, $courseid, $user->id);
+    $run = block_moodle_sence_resolve_user_run($user);
+    $idsesion = session_manager::generate_session_id($user->id, $courseid);
+    list($codsence, $codigocurso) = block_moodle_sence_apply_testmode_codes(
+        $codes['codsence'],
+        $codes['codigocurso']
+    );
+
+    $success = block_moodle_sence_callback_url($courseid, $instanceid, 'success');
+    $error = block_moodle_sence_callback_url($courseid, $instanceid, 'error');
+
+    return [
+        'RutOtec' => block_moodle_sence_get_rut_otec(),
+        'Token' => block_moodle_sence_get_token(),
+        'CodSence' => $codsence,
+        'CodigoCurso' => $codigocurso,
+        'LineaCapacitacion' => (int) ($config->lineasdecap ?? 3),
+        'RunAlumno' => $run,
+        'IdSesionAlumno' => $idsesion,
+        'UrlRetoma' => $success->out(false),
+        'UrlError' => $error->out(false),
+        '_idsesionalumno' => $idsesion,
+        '_codcurso' => $codes['codigocurso'],
+        '_idaccion' => $codes['idaccion'],
+        '_codsence' => $codes['codsence'],
+    ];
+}
+
+/**
+ * @param \stdClass $config
+ * @param \stdClass $record
+ * @param int $courseid
+ * @param int $instanceid
+ * @param int $userid
+ * @return array
+ */
+function block_moodle_sence_build_logout_fields(
+    \stdClass $config,
+    \stdClass $record,
+    int $courseid,
+    int $instanceid,
+    int $userid = 0
+): array {
+    if ($userid <= 0 && !empty($record->runalumno)) {
+        // userid opcional; códigos desde config + grupo del usuario actual si se pasa.
+        global $USER;
+        $userid = (int) $USER->id;
+    }
+    $codes = block_moodle_sence_resolve_runtime_codes($config, $courseid, $userid);
+    list($codsence, $codigocurso) = block_moodle_sence_apply_testmode_codes(
+        $codes['codsence'],
+        $codes['codigocurso']
+    );
+
+    $success = block_moodle_sence_callback_url($courseid, $instanceid, 'success');
+    $error = block_moodle_sence_callback_url($courseid, $instanceid, 'error');
+
+    return [
+        'RutOtec' => block_moodle_sence_get_rut_otec(),
+        'Token' => block_moodle_sence_get_token(),
+        'CodSence' => $codsence,
+        'CodigoCurso' => $codigocurso,
+        'LineaCapacitacion' => (int) ($config->lineasdecap ?? 3),
+        'RunAlumno' => rut_helper::format_run($record->runalumno),
+        'IdSesionAlumno' => $record->idsesionalumno,
+        'IdSesionSence' => $record->idsesionsence,
+        'UrlRetoma' => $success->out(false),
+        'UrlError' => $error->out(false),
+    ];
+}
+
+/**
+ * Auto-submit POST form HTML.
+ *
+ * @param string $action
+ * @param array $fields
+ * @param string $label
+ * @param string $formid
+ * @return string
+ */
+function block_moodle_sence_render_post_form(
+    string $action,
+    array $fields,
+    string $label,
+    string $formid = ''
+): string {
+    $attrs = [
+        'method' => 'post',
+        'action' => $action,
+        'class' => 'block-moodle-sence-rce-form',
+    ];
+    if ($formid !== '') {
+        $attrs['id'] = $formid;
+    }
+    $out = \html_writer::start_tag('form', $attrs);
+    foreach ($fields as $name => $value) {
+        if (strpos($name, '_') === 0) {
+            continue;
+        }
+        $out .= \html_writer::empty_tag('input', ['type' => 'hidden', 'name' => $name, 'value' => $value]);
+    }
+    $out .= \html_writer::tag('button', $label, [
+        'type' => 'submit',
+        'class' => 'btn block-moodle-sence-btn block-moodle-sence-btn--primary',
+    ]);
+    $out .= \html_writer::end_tag('form');
+    return $out;
+}

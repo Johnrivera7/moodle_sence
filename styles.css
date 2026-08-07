@@ -1,0 +1,223 @@
+/* block_moodle_sence — teal/navy institucional (Boost light/dark) */
+
+:root {
+    --bms-navy: #0b3d5c;
+    --bms-teal: #0d7a7a;
+    --bms-teal-dark: #095e5e;
+    --bms-sand: #e8f2f2;
+    --bms-warn: #c45c26;
+    --bms-danger: #a33b3b;
+    --bms-ok: #1f6b4a;
+    --bms-text: #1a2b33;
+    --bms-muted: #5a6b73;
+    --bms-radius: 6px;
+}
+
+body.block-moodle-sence-gated {
+    overflow-x: hidden;
+}
+
+.block-moodle-sence {
+    color: var(--bms-text);
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.block-moodle-sence__title {
+    font-weight: 700;
+    color: var(--bms-navy);
+    margin: 0 0 0.35rem;
+}
+
+.block-moodle-sence__text,
+.block-moodle-sence__hint,
+.block-moodle-sence__help {
+    margin: 0 0 0.75rem;
+    color: var(--bms-muted);
+}
+
+.block-moodle-sence__help a {
+    color: var(--bms-teal);
+    font-weight: 600;
+}
+
+.block-moodle-sence-card {
+    border-left: 4px solid var(--bms-teal);
+    background: var(--bms-sand);
+    padding: 0.85rem 1rem;
+    border-radius: var(--bms-radius);
+    margin-bottom: 0.85rem;
+}
+
+.block-moodle-sence-card--success {
+    border-left-color: var(--bms-ok);
+    background: color-mix(in srgb, var(--bms-ok) 12%, white);
+}
+
+.block-moodle-sence-card--warning {
+    border-left-color: var(--bms-warn);
+    background: color-mix(in srgb, var(--bms-warn) 12%, white);
+}
+
+.block-moodle-sence-card--danger {
+    border-left-color: var(--bms-danger);
+    background: color-mix(in srgb, var(--bms-danger) 10%, white);
+}
+
+.block-moodle-sence-card--info {
+    border-left-color: var(--bms-navy);
+}
+
+.block-moodle-sence-codes {
+    font-size: 0.85rem;
+    margin: 0.75rem 0 1rem;
+}
+
+.block-moodle-sence-codes dt {
+    font-weight: 600;
+    margin-top: 0.35rem;
+    color: var(--bms-navy);
+}
+
+.block-moodle-sence-codes dd {
+    margin-bottom: 0;
+    word-break: break-word;
+}
+
+.block-moodle-sence-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    margin-bottom: 0.65rem;
+}
+
+.block-moodle-sence-badge--test {
+    background: var(--bms-navy);
+    color: #fff;
+}
+
+.block-moodle-sence-timer {
+    text-align: center;
+    color: #fff;
+    background: var(--bms-navy);
+    padding: 0.75rem 1rem;
+    border-radius: var(--bms-radius);
+    margin-bottom: 0.85rem;
+    transition: background-color 0.3s ease;
+}
+
+.block-moodle-sence-timer--warn {
+    background: var(--bms-warn);
+}
+
+.block-moodle-sence-timer__label {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.9;
+    margin-bottom: 0.15rem;
+}
+
+.block-moodle-sence-timer__value {
+    font-size: 1.45rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+}
+
+.block-moodle-sence-timeout-banner {
+    z-index: 100000;
+    width: 100%;
+    background: var(--bms-danger);
+    color: #fff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.block-moodle-sence-timeout-banner h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.block-moodle-sence-rce-form {
+    margin-top: 0.5rem;
+}
+
+.block-moodle-sence-btn,
+.block-moodle-sence-rce-form .btn,
+.block-moodle-sence-btn--primary {
+    display: block;
+    width: 100%;
+    background: var(--bms-teal) !important;
+    border-color: var(--bms-teal-dark) !important;
+    color: #fff !important;
+    font-weight: 600;
+    padding: 0.65rem 1rem;
+    border-radius: var(--bms-radius);
+}
+
+.block-moodle-sence-btn:hover,
+.block-moodle-sence-rce-form .btn:hover {
+    background: var(--bms-teal-dark) !important;
+}
+
+.block-moodle-sence-gate {
+    max-width: 32rem;
+    margin: 2rem auto;
+    padding: 1.5rem;
+    background: var(--bms-sand);
+    border: 1px solid color-mix(in srgb, var(--bms-navy) 18%, transparent);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(11, 61, 92, 0.08);
+}
+
+.block-moodle-sence-gate__banner {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--bms-navy);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--bms-teal);
+}
+
+.block-moodle-sence--manager .block-moodle-sence__title {
+    margin-bottom: 0.75rem;
+}
+
+/* Boost dark mode */
+body.darkmode .block-moodle-sence,
+html[data-bs-theme="dark"] .block-moodle-sence {
+    --bms-text: #e6eef2;
+    --bms-muted: #a8b8c0;
+    --bms-sand: #163040;
+    color: var(--bms-text);
+}
+
+body.darkmode .block-moodle-sence__title,
+html[data-bs-theme="dark"] .block-moodle-sence__title {
+    color: #9fd4d4;
+}
+
+body.darkmode .block-moodle-sence-gate,
+html[data-bs-theme="dark"] .block-moodle-sence-gate {
+    background: #122a38;
+    border-color: #2a4a5c;
+}
+
+body.darkmode .block-moodle-sence-card--success,
+html[data-bs-theme="dark"] .block-moodle-sence-card--success {
+    background: color-mix(in srgb, var(--bms-ok) 25%, #122a38);
+}
+
+body.darkmode .block-moodle-sence-card--warning,
+html[data-bs-theme="dark"] .block-moodle-sence-card--warning {
+    background: color-mix(in srgb, var(--bms-warn) 22%, #122a38);
+}
