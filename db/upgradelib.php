@@ -74,3 +74,64 @@ function xmldb_block_moodle_sence_migrate_legacy_config(): void {
         set_config($row->name, $row->value, 'block_moodle_sence');
     }
 }
+
+/**
+ * Crea (o asegura) el campo de perfil shortname=rut → profile_field_rut, único por usuario.
+ */
+function xmldb_block_moodle_sence_ensure_profile_field_rut(): void {
+    global $DB, $CFG;
+
+    require_once($CFG->dirroot . '/user/profile/lib.php');
+
+    $existing = $DB->get_record('user_info_field', ['shortname' => 'rut']);
+    if ($existing) {
+        $changed = false;
+        if (empty($existing->forceunique)) {
+            $existing->forceunique = 1;
+            $changed = true;
+        }
+        if ((string) $existing->visible !== (string) PROFILE_VISIBLE_ALL) {
+            $existing->visible = PROFILE_VISIBLE_ALL;
+            $changed = true;
+        }
+        if ($changed) {
+            $DB->update_record('user_info_field', $existing);
+        }
+        return;
+    }
+
+    $categoryid = (int) $DB->get_field_sql('SELECT MIN(id) FROM {user_info_category}');
+    if ($categoryid <= 0) {
+        $categoryid = (int) $DB->insert_record('user_info_category', (object) [
+            'name' => 'SENCE',
+            'sortorder' => 1,
+        ]);
+    }
+
+    $sortorder = (int) $DB->get_field_sql(
+        'SELECT COALESCE(MAX(sortorder), 0) + 1 FROM {user_info_field} WHERE categoryid = ?',
+        [$categoryid]
+    );
+
+    $DB->insert_record('user_info_field', (object) [
+        'shortname' => 'rut',
+        'name' => 'RUT',
+        'datatype' => 'text',
+        'description' => 'RUT chileno del alumno para integración SENCE (formato 12345678-9).',
+        'descriptionformat' => FORMAT_HTML,
+        'categoryid' => $categoryid,
+        'sortorder' => $sortorder,
+        'required' => 0,
+        'locked' => 0,
+        'visible' => PROFILE_VISIBLE_ALL,
+        'forceunique' => 1,
+        'signup' => 0,
+        'defaultdata' => '',
+        'defaultdataformat' => FORMAT_HTML,
+        'param1' => '30',
+        'param2' => '12',
+        'param3' => '0',
+        'param4' => '',
+        'param5' => '',
+    ]);
+}

@@ -1,16 +1,21 @@
-/* block_moodle_sence — teal/navy institucional (Boost light/dark) */
+/* block_moodle_sence — paleta sence.gob.cl (navy #113B6A, azul #337AB7, acento #EB1E0F) */
 
 :root {
-    --bms-navy: #0b3d5c;
-    --bms-teal: #0d7a7a;
-    --bms-teal-dark: #095e5e;
-    --bms-sand: #e8f2f2;
+    --bms-navy: #113b6a;
+    --bms-blue: #337ab7;
+    --bms-blue-dark: #2e6da4;
+    --bms-red: #eb1e0f;
+    --bms-red-dark: #c4180c;
+    --bms-ink: #181818;
+    --bms-muted: #4e4e4e;
+    --bms-surface: #ffffff;
+    --bms-surface-soft: #f4f7fb;
+    --bms-border: color-mix(in srgb, var(--bms-navy) 16%, transparent);
+    --bms-ok: #1f6b4a;
     --bms-warn: #c45c26;
     --bms-danger: #a33b3b;
-    --bms-ok: #1f6b4a;
-    --bms-text: #1a2b33;
-    --bms-muted: #5a6b73;
-    --bms-radius: 6px;
+    --bms-radius: 10px;
+    --bms-shadow: 0 10px 28px rgba(17, 59, 106, 0.12);
 }
 
 body.block-moodle-sence-gated {
@@ -18,50 +23,89 @@ body.block-moodle-sence-gated {
 }
 
 .block-moodle-sence {
-    color: var(--bms-text);
+    color: var(--bms-ink);
     font-size: 0.95rem;
-    line-height: 1.45;
+    line-height: 1.5;
 }
 
 .block-moodle-sence__title {
     font-weight: 700;
     color: var(--bms-navy);
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.4rem;
+    font-size: 1.15rem;
 }
 
 .block-moodle-sence__text,
 .block-moodle-sence__hint,
 .block-moodle-sence__help {
-    margin: 0 0 0.75rem;
+    margin: 0 0 0.85rem;
     color: var(--bms-muted);
 }
 
 .block-moodle-sence__help a {
-    color: var(--bms-teal);
+    color: var(--bms-blue);
     font-weight: 600;
 }
 
-.block-moodle-sence-card {
-    border-left: 4px solid var(--bms-teal);
-    background: var(--bms-sand);
-    padding: 0.85rem 1rem;
+.block-moodle-sence-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 3px solid var(--bms-red);
+}
+
+.block-moodle-sence-brand__mark {
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--bms-navy);
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.block-moodle-sence-brand__sub {
+    color: var(--bms-muted);
+    font-size: 0.85rem;
+}
+
+.block-moodle-sence-panel {
+    background: var(--bms-surface);
+    border: 1px solid var(--bms-border);
     border-radius: var(--bms-radius);
-    margin-bottom: 0.85rem;
+    padding: 1.1rem 1.15rem;
+    box-shadow: var(--bms-shadow);
+}
+
+.block-moodle-sence-panel--gate,
+.block-moodle-sence-panel--login {
+    max-width: 28rem;
+    width: 100%;
+    margin-inline: auto;
+}
+
+.block-moodle-sence-card {
+    border-left: 4px solid var(--bms-blue);
+    background: var(--bms-surface-soft);
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.9rem;
 }
 
 .block-moodle-sence-card--success {
     border-left-color: var(--bms-ok);
-    background: color-mix(in srgb, var(--bms-ok) 12%, white);
+    background: color-mix(in srgb, var(--bms-ok) 12%, var(--bms-surface));
 }
 
 .block-moodle-sence-card--warning {
     border-left-color: var(--bms-warn);
-    background: color-mix(in srgb, var(--bms-warn) 12%, white);
+    background: color-mix(in srgb, var(--bms-warn) 12%, var(--bms-surface));
 }
 
 .block-moodle-sence-card--danger {
     border-left-color: var(--bms-danger);
-    background: color-mix(in srgb, var(--bms-danger) 10%, white);
+    background: color-mix(in srgb, var(--bms-danger) 10%, var(--bms-surface));
 }
 
 .block-moodle-sence-card--info {
@@ -70,7 +114,7 @@ body.block-moodle-sence-gated {
 
 .block-moodle-sence-codes {
     font-size: 0.85rem;
-    margin: 0.75rem 0 1rem;
+    margin: 0.75rem 0 0;
 }
 
 .block-moodle-sence-codes dt {
@@ -90,9 +134,9 @@ body.block-moodle-sence-gated {
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    padding: 0.2rem 0.5rem;
-    border-radius: 3px;
-    margin-bottom: 0.65rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 4px;
+    margin-bottom: 0.7rem;
 }
 
 .block-moodle-sence-badge--test {
@@ -103,42 +147,42 @@ body.block-moodle-sence-gated {
 .block-moodle-sence-timer {
     text-align: center;
     color: #fff;
-    background: var(--bms-navy);
-    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, var(--bms-navy), var(--bms-blue));
+    padding: 0.85rem 1rem;
     border-radius: var(--bms-radius);
-    margin-bottom: 0.85rem;
+    margin-bottom: 0.9rem;
     transition: background-color 0.3s ease;
 }
 
 .block-moodle-sence-timer--warn {
-    background: var(--bms-warn);
+    background: linear-gradient(135deg, var(--bms-warn), var(--bms-red));
 }
 
 .block-moodle-sence-timer__label {
     display: block;
     font-size: 0.75rem;
-    opacity: 0.9;
+    opacity: 0.92;
     margin-bottom: 0.15rem;
 }
 
 .block-moodle-sence-timer__value {
-    font-size: 1.45rem;
+    font-size: clamp(1.25rem, 4vw, 1.55rem);
     font-variant-numeric: tabular-nums;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
 }
 
 .block-moodle-sence-timeout-banner {
     z-index: 100000;
     width: 100%;
-    background: var(--bms-danger);
+    background: var(--bms-red);
     color: #fff;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     text-align: center;
-    padding: 0.75rem 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    padding: 0.8rem 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
 }
 
 .block-moodle-sence-timeout-banner h3 {
@@ -148,7 +192,7 @@ body.block-moodle-sence-gated {
 }
 
 .block-moodle-sence-rce-form {
-    margin-top: 0.5rem;
+    margin-top: 0.35rem;
 }
 
 .block-moodle-sence-btn,
@@ -156,68 +200,119 @@ body.block-moodle-sence-gated {
 .block-moodle-sence-btn--primary {
     display: block;
     width: 100%;
-    background: var(--bms-teal) !important;
-    border-color: var(--bms-teal-dark) !important;
+    background: var(--bms-red) !important;
+    border: 1px solid var(--bms-red-dark) !important;
     color: #fff !important;
-    font-weight: 600;
-    padding: 0.65rem 1rem;
-    border-radius: var(--bms-radius);
+    font-weight: 700;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    letter-spacing: 0.01em;
+    transition: background-color 0.2s ease, transform 0.15s ease;
 }
 
 .block-moodle-sence-btn:hover,
 .block-moodle-sence-rce-form .btn:hover {
-    background: var(--bms-teal-dark) !important;
+    background: var(--bms-red-dark) !important;
+}
+
+.block-moodle-sence-btn:focus-visible,
+.block-moodle-sence-rce-form .btn:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--bms-blue) 55%, white);
+    outline-offset: 2px;
 }
 
 .block-moodle-sence-gate {
-    max-width: 32rem;
-    margin: 2rem auto;
-    padding: 1.5rem;
-    background: var(--bms-sand);
-    border: 1px solid color-mix(in srgb, var(--bms-navy) 18%, transparent);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(11, 61, 92, 0.08);
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(1rem, 4vw, 2rem);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--bms-navy) 88%, black), color-mix(in srgb, var(--bms-navy) 72%, #000)),
+        radial-gradient(circle at top right, color-mix(in srgb, var(--bms-blue) 35%, transparent), transparent 55%);
 }
 
-.block-moodle-sence-gate__banner {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--bms-navy);
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--bms-teal);
+.block-moodle-sence-gate__shell {
+    width: min(100%, 32rem);
+}
+
+.block-moodle-sence-gate .block-moodle-sence-panel,
+.block-moodle-sence-gate .block-moodle-sence {
+    background: var(--bms-surface);
+    color: var(--bms-ink);
 }
 
 .block-moodle-sence--manager .block-moodle-sence__title {
     margin-bottom: 0.75rem;
 }
 
-/* Boost dark mode */
+@media (max-width: 576px) {
+    .block-moodle-sence-panel {
+        padding: 0.95rem 0.9rem;
+        border-radius: 8px;
+        box-shadow: 0 6px 18px rgba(17, 59, 106, 0.1);
+    }
+
+    .block-moodle-sence-brand__mark {
+        font-size: 1.2rem;
+    }
+
+    .block-moodle-sence-btn,
+    .block-moodle-sence-rce-form .btn {
+        padding: 0.9rem 1rem;
+        font-size: 1rem;
+    }
+}
+
+/* Boost / Moodle dark mode */
+body.darkmode,
+html[data-bs-theme="dark"] {
+    --bms-ink: #eef3f8;
+    --bms-muted: #a9b7c5;
+    --bms-surface: #152536;
+    --bms-surface-soft: #1b2f44;
+    --bms-border: color-mix(in srgb, #9ec3e6 22%, transparent);
+    --bms-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
 body.darkmode .block-moodle-sence,
 html[data-bs-theme="dark"] .block-moodle-sence {
-    --bms-text: #e6eef2;
-    --bms-muted: #a8b8c0;
-    --bms-sand: #163040;
-    color: var(--bms-text);
+    color: var(--bms-ink);
 }
 
 body.darkmode .block-moodle-sence__title,
-html[data-bs-theme="dark"] .block-moodle-sence__title {
-    color: #9fd4d4;
+html[data-bs-theme="dark"] .block-moodle-sence__title,
+body.darkmode .block-moodle-sence-brand__mark,
+html[data-bs-theme="dark"] .block-moodle-sence-brand__mark,
+body.darkmode .block-moodle-sence-codes dt,
+html[data-bs-theme="dark"] .block-moodle-sence-codes dt {
+    color: #9ec3e6;
 }
 
-body.darkmode .block-moodle-sence-gate,
-html[data-bs-theme="dark"] .block-moodle-sence-gate {
-    background: #122a38;
-    border-color: #2a4a5c;
+body.darkmode .block-moodle-sence-panel,
+html[data-bs-theme="dark"] .block-moodle-sence-panel {
+    background: var(--bms-surface);
+    border-color: var(--bms-border);
 }
 
 body.darkmode .block-moodle-sence-card--success,
 html[data-bs-theme="dark"] .block-moodle-sence-card--success {
-    background: color-mix(in srgb, var(--bms-ok) 25%, #122a38);
+    background: color-mix(in srgb, var(--bms-ok) 22%, var(--bms-surface));
 }
 
 body.darkmode .block-moodle-sence-card--warning,
 html[data-bs-theme="dark"] .block-moodle-sence-card--warning {
-    background: color-mix(in srgb, var(--bms-warn) 22%, #122a38);
+    background: color-mix(in srgb, var(--bms-warn) 20%, var(--bms-surface));
+}
+
+body.darkmode .block-moodle-sence-card--danger,
+html[data-bs-theme="dark"] .block-moodle-sence-card--danger {
+    background: color-mix(in srgb, var(--bms-danger) 18%, var(--bms-surface));
+}
+
+body.darkmode .block-moodle-sence-gate,
+html[data-bs-theme="dark"] .block-moodle-sence-gate {
+    background:
+        linear-gradient(180deg, #0b1724, #101f30),
+        radial-gradient(circle at top right, rgba(51, 122, 183, 0.28), transparent 55%);
 }

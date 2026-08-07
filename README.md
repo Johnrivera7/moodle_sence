@@ -4,7 +4,7 @@ Bloque **libre (MIT)** para [Registro de Asistencia SENCE](docs/integracion_regi
 
 - **Autor:** [John Rivera](https://github.com/Johnrivera7)
 - **Repositorio:** https://github.com/Johnrivera7/moodle_sence
-- **Release:** `1.1.0-moodle45`
+- **Release:** `1.2.0-moodle45`
 
 ## Flujo RCE (login / logout)
 
@@ -48,6 +48,8 @@ flowchart TD
    - Código: `CodSence/CodigoCurso`, 10 dígitos, o `MULTIPLES`
    - Grupos becarios (coma)
    - Correo alerta, forzar cierre, duración máxima, mensaje de alerta
+
+Al instalar/actualizar, el bloque crea el campo de perfil **RUT** (`shortname=rut` → `profile_field_rut`), **único por usuario**. El RUT del alumno se lee desde ahí (con fallback a `idnumber`/`username`).
 
 ### Grupos `SENCE-*`
 

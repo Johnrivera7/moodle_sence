@@ -160,10 +160,11 @@ class block_moodle_sence extends block_base {
             $out .= html_writer::script($this->logout_intercept_js());
         } else {
             if (!block_moodle_sence_is_valid_run($run)) {
-                $editurl = new moodle_url('/user/edit.php', ['id' => $USER->id]);
+                $editurl = block_moodle_sence_profile_rut_edit_url((int) $USER->id);
                 $out .= html_writer::div(
-                    get_string('invalidrun', 'block_moodle_sence', $editurl->out(false)),
-                    'alert alert-danger block-moodle-sence-card block-moodle-sence-card--danger',
+                    html_writer::tag('p', get_string('invalidrun_title', 'block_moodle_sence'), ['class' => 'block-moodle-sence__title']) .
+                    html_writer::tag('p', get_string('invalidrun', 'block_moodle_sence', $editurl->out(false)), ['class' => 'block-moodle-sence__text']),
+                    'block-moodle-sence-card block-moodle-sence-card--danger',
                     ['role' => 'alert']
                 );
             } else if ((int) ($config->lineasdecap ?? 3) !== 1
@@ -171,17 +172,28 @@ class block_moodle_sence extends block_base {
                 && strlen($codes['codsence']) < 5) {
                 $out .= html_writer::div(
                     get_string('noconfig', 'block_moodle_sence'),
-                    'alert alert-danger',
+                    'block-moodle-sence-card block-moodle-sence-card--danger',
                     ['role' => 'alert']
                 );
             } else if ((int) ($config->lineasdecap ?? 3) !== 1 && !$codes['fromgroup']
                 && ($codes['codigocurso'] === '' || $codes['idaccion'] === '')) {
                 $out .= html_writer::div(
                     get_string('nogroupaction', 'block_moodle_sence'),
-                    'alert alert-danger',
+                    'block-moodle-sence-card block-moodle-sence-card--danger',
                     ['role' => 'alert']
                 );
             } else {
+                $panelclass = $forcer
+                    ? 'block-moodle-sence-panel block-moodle-sence-panel--gate'
+                    : 'block-moodle-sence-panel block-moodle-sence-panel--login';
+
+                $out .= html_writer::start_div($panelclass);
+                $out .= html_writer::div(
+                    html_writer::span('SENCE', 'block-moodle-sence-brand__mark') .
+                    html_writer::span(get_string('brand_subtitle', 'block_moodle_sence'), 'block-moodle-sence-brand__sub'),
+                    'block-moodle-sence-brand'
+                );
+
                 if ($forcer) {
                     $out .= html_writer::div(
                         html_writer::tag('p', get_string('gatetitle', 'block_moodle_sence'), ['class' => 'block-moodle-sence__title']) .
@@ -189,6 +201,9 @@ class block_moodle_sence extends block_base {
                         'block-moodle-sence-card block-moodle-sence-card--warning'
                     );
                     $out .= html_writer::script($this->gate_js());
+                } else {
+                    $out .= html_writer::tag('p', get_string('logintitle', 'block_moodle_sence'), ['class' => 'block-moodle-sence__title']);
+                    $out .= html_writer::tag('p', get_string('loginsubtitle', 'block_moodle_sence'), ['class' => 'block-moodle-sence__text']);
                 }
 
                 $loginfields = block_moodle_sence_build_login_fields(
@@ -207,6 +222,7 @@ class block_moodle_sence extends block_base {
                     get_string('claveunicahelp', 'block_moodle_sence'),
                     ['class' => 'block-moodle-sence__help']
                 );
+                $out .= html_writer::end_div();
             }
         }
 
@@ -294,18 +310,18 @@ class block_moodle_sence extends block_base {
     if (!main || !block) {
       return;
     }
-    var source = block.querySelector('.card-text, .content, [data-region="content"]') || block;
+    var source = block.querySelector('.block-moodle-sence-panel--gate')
+      || block.querySelector('.card-text, .content, [data-region="content"]')
+      || block;
     var gate = document.createElement('div');
     gate.className = 'block-moodle-sence-gate';
     gate.setAttribute('role', 'dialog');
+    gate.setAttribute('aria-modal', 'true');
     gate.setAttribute('aria-label', 'SENCE');
-    var heading = document.createElement('div');
-    heading.className = 'block-moodle-sence-gate__banner';
-    heading.textContent = source.querySelector('.block-moodle-sence__title')
-      ? source.querySelector('.block-moodle-sence__title').textContent
-      : 'SENCE';
-    gate.appendChild(heading);
-    gate.appendChild(source.cloneNode(true));
+    var shell = document.createElement('div');
+    shell.className = 'block-moodle-sence-gate__shell';
+    shell.appendChild(source.cloneNode(true));
+    gate.appendChild(shell);
     main.innerHTML = '';
     main.appendChild(gate);
   }

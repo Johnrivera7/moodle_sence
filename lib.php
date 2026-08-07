@@ -289,18 +289,43 @@ function block_moodle_sence_glosa_message($code): string {
 }
 
 /**
- * RUT alumno: idnumber o username; sin puntos.
+ * RUT alumno desde profile_field_rut (único); fallback idnumber/username.
  *
  * @param \stdClass $user
  * @return string
  */
 function block_moodle_sence_resolve_user_run(\stdClass $user): string {
-    $raw = trim((string) ($user->idnumber ?? ''));
+    global $CFG;
+    require_once($CFG->dirroot . '/user/profile/lib.php');
+
+    if (empty($user->profile) || !is_array($user->profile)) {
+        profile_load_custom_fields($user);
+    }
+
+    $raw = '';
+    if (!empty($user->profile['rut'])) {
+        $raw = trim((string) $user->profile['rut']);
+    } else if (!empty($user->profile_field_rut)) {
+        $raw = trim((string) $user->profile_field_rut);
+    }
+    if ($raw === '') {
+        $raw = trim((string) ($user->idnumber ?? ''));
+    }
     if ($raw === '') {
         $raw = trim((string) ($user->username ?? ''));
     }
     $raw = str_replace('.', '', $raw);
     return rut_helper::format_run($raw);
+}
+
+/**
+ * URL para editar el campo de perfil RUT.
+ *
+ * @param int $userid
+ * @return \moodle_url
+ */
+function block_moodle_sence_profile_rut_edit_url(int $userid): \moodle_url {
+    return new \moodle_url('/user/edit.php', ['id' => $userid, 'course' => SITEID]);
 }
 
 /**

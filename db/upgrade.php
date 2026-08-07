@@ -10,5 +10,11 @@ function xmldb_block_moodle_sence_upgrade($oldversion) {
         xmldb_block_moodle_sence_migrate_legacy_config();
         upgrade_block_savepoint(true, 2026052800, 'moodle_sence');
     }
+
+    if ($oldversion < 2026080710) {
+        xmldb_block_moodle_sence_ensure_profile_field_rut();
+        upgrade_block_savepoint(true, 2026080710, 'moodle_sence');
+    }
+
     return true;
 }

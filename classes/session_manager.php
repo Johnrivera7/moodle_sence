@@ -106,7 +106,10 @@ class session_manager {
     public static function close_session_by_post(array $post, \stdClass $user): void {
         global $DB;
         $idsesion = $post['IdSesionAlumno'] ?? '';
-        $runraw = $post['RunAlumno'] ?? ($user->idnumber ?? $user->username ?? '');
+        $runraw = $post['RunAlumno'] ?? '';
+        if ($runraw === '') {
+            $runraw = \block_moodle_sence_resolve_user_run($user);
+        }
         $runbody = rut_helper::run_body(rut_helper::format_run($runraw));
         $runwith = rut_helper::format_run($runraw);
 
