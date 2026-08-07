@@ -4,7 +4,7 @@ Bloque **libre (MIT)** para [Registro de Asistencia SENCE](docs/integracion_regi
 
 - **Autor:** [John Rivera](https://github.com/Johnrivera7)
 - **Repositorio:** https://github.com/Johnrivera7/moodle_sence
-- **Release:** `1.2.0-moodle45`
+- **Release:** `1.2.0-moodle51`
 
 ## Flujo RCE (login / logout)
 
