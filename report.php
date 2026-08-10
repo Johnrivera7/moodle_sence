@@ -112,6 +112,9 @@ if ($action === 'remind') {
             'course' => format_string($course->fullname),
             'sender' => fullname($USER),
             'senderemail' => $USER->email,
+            'cc' => !empty($config->correorecordatorio)
+                ? implode(', ', block_moodle_sence_parse_alert_emails((string) $config->correorecordatorio))
+                : get_string('reminder_cc_none', 'block_moodle_sence'),
         ]);
         $yesurl = new moodle_url($reporturl, [
             'status' => $filter,
@@ -125,12 +128,14 @@ if ($action === 'remind') {
         exit;
     }
 
-    $result = report_builder::send_reminder_user($course, $target, $USER);
+    $result = report_builder::send_reminder_user($course, $target, $USER, $config);
     if ($result === 'ok') {
+        $cclist = block_moodle_sence_parse_alert_emails((string) ($config->correorecordatorio ?? ''));
         redirect($backurl, get_string('reminder_user_sent', 'block_moodle_sence', (object) [
             'fullname' => $target->fullname,
             'email' => $target->email,
             'sender' => fullname($USER),
+            'cc' => !empty($cclist) ? implode(', ', $cclist) : get_string('reminder_cc_none', 'block_moodle_sence'),
         ]), null, \core\output\notification::NOTIFY_SUCCESS);
     }
     if ($result === 'skipped') {

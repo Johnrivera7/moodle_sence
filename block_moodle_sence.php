@@ -278,6 +278,17 @@ class block_moodle_sence extends block_base {
             $out .= html_writer::tag('p', get_string('managercorreo_none', 'block_moodle_sence'));
         }
 
+        $correorecordatorio = trim((string) ($config->correorecordatorio ?? ''));
+        $emailsreminder = block_moodle_sence_parse_alert_emails($correorecordatorio);
+        if (!empty($emailsreminder)) {
+            $out .= html_writer::tag(
+                'p',
+                get_string('managercorreorecordatorio', 'block_moodle_sence', implode(', ', $emailsreminder))
+            );
+        } else {
+            $out .= html_writer::tag('p', get_string('managercorreorecordatorio_none', 'block_moodle_sence'));
+        }
+
         if (!empty($config->forzarcierre)) {
             $out .= html_writer::tag('p', get_string('managerforce_on', 'block_moodle_sence'));
         } else {

@@ -48,14 +48,21 @@ class report_builder {
     }
 
     /**
-     * Envía recordatorio a un único participante, con CC al emisor (quien hace clic).
+     * Envía recordatorio a un único participante.
+     * CC = correos del bloque; BCC = quien hace clic.
      *
      * @param \stdClass $course
      * @param \stdClass $row Fila del reporte
-     * @param \stdClass $fromuser Quien envía (recibe copia)
+     * @param \stdClass $fromuser Quien envía (BCC)
+     * @param \stdClass|null $config Config del bloque
      * @return string ok|skipped|failed
      */
-    public static function send_reminder_user(\stdClass $course, \stdClass $row, \stdClass $fromuser): string {
+    public static function send_reminder_user(
+        \stdClass $course,
+        \stdClass $row,
+        \stdClass $fromuser,
+        ?\stdClass $config = null
+    ): string {
         global $CFG;
 
         require_once($CFG->libdir . '/moodlelib.php');
@@ -69,6 +76,11 @@ class report_builder {
         $user = \core_user::get_user($row->userid, '*', IGNORE_MISSING);
         if (!$user || empty($user->email) || !empty($user->deleted) || !empty($user->suspended)) {
             return 'skipped';
+        }
+
+        $ccemails = [];
+        if ($config && !empty($config->correorecordatorio)) {
+            $ccemails = \block_moodle_sence_parse_alert_emails((string) $config->correorecordatorio);
         }
 
         $courseurl = new \moodle_url('/course/view.php', ['id' => $course->id]);
@@ -87,7 +99,14 @@ class report_builder {
         $bodytext = get_string('reminder_body_text', 'block_moodle_sence', $a);
         $bodyhtml = get_string('reminder_body_html', 'block_moodle_sence', $a);
 
-        $ok = \block_moodle_sence_email_with_cc($user, $fromuser, $subject, $bodytext, $bodyhtml);
+        $ok = \block_moodle_sence_email_reminder(
+            $user,
+            $fromuser,
+            $subject,
+            $bodytext,
+            $bodyhtml,
+            $ccemails
+        );
         return $ok ? 'ok' : 'failed';
     }
 

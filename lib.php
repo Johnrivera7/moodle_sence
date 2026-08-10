@@ -544,44 +544,68 @@ function block_moodle_sence_send_alert_emails(string $rawemails, string $subject
 }
 
 /**
- * Envía un correo con copia (CC) al usuario que dispara la acción.
- * Usa get_mailer para CC real; si falla, envía al destinatario y una copia aparte al emisor.
+ * Envía recordatorio: To = alumno, CC = correos configurados, BCC = quien hace clic.
  *
- * @param \stdClass $touser
- * @param \stdClass $fromuser Remitente / quien hace clic
+ * @param \stdClass $touser Destinatario principal
+ * @param \stdClass $fromuser Quien envía (va en BCC / copia oculta)
  * @param string $subject
  * @param string $messagetext
  * @param string $messagehtml
+ * @param string[] $ccemails Correos visibles en copia (config del bloque)
  * @return bool
  */
-function block_moodle_sence_email_with_cc(
+function block_moodle_sence_email_reminder(
     \stdClass $touser,
     \stdClass $fromuser,
     string $subject,
     string $messagetext,
-    string $messagehtml = ''
+    string $messagehtml = '',
+    array $ccemails = []
 ): bool {
     global $CFG;
 
-    if (empty($touser->email) || empty($fromuser->email)) {
+    if (empty($touser->email)) {
         return false;
     }
 
     $toname = fullname($touser);
     $fromname = fullname($fromuser);
-    $noreply = !empty($CFG->noreplyaddress) ? $CFG->noreplyaddress : $fromuser->email;
+    $noreply = !empty($CFG->noreplyaddress) ? $CFG->noreplyaddress : (!empty($fromuser->email) ? $fromuser->email : '');
+    if ($noreply === '') {
+        return false;
+    }
+
+    $ccemails = array_values(array_unique(array_filter(array_map('strtolower', $ccemails), static function ($e) {
+        return validate_email($e);
+    })));
+    // No duplicar al destinatario principal en CC.
+    $ccemails = array_values(array_filter($ccemails, static function ($e) use ($touser) {
+        return strcasecmp($e, (string) $touser->email) !== 0;
+    }));
 
     try {
         $mail = get_mailer();
         $mail->Sender = $noreply;
         $mail->From = $noreply;
         $mail->FromName = $fromname;
-        $mail->addReplyTo($fromuser->email, $fromname);
+        if (!empty($fromuser->email) && validate_email($fromuser->email)) {
+            $mail->addReplyTo($fromuser->email, $fromname);
+        }
         $mail->Subject = substr($subject, 0, 900);
         $mail->addAddress($touser->email, $toname);
-        if ((int) $fromuser->id !== (int) $touser->id) {
-            $mail->addCC($fromuser->email, $fromname);
+
+        foreach ($ccemails as $cc) {
+            $mail->addCC($cc);
         }
+
+        // Copia oculta al que presiona el botón.
+        if (!empty($fromuser->email) && validate_email($fromuser->email)
+            && (int) $fromuser->id !== (int) $touser->id
+            && !in_array(strtolower($fromuser->email), $ccemails, true)
+            && strcasecmp($fromuser->email, (string) $touser->email) !== 0) {
+            $mail->addBCC($fromuser->email, $fromname);
+        }
+
         if ($messagehtml !== '') {
             $mail->isHTML(true);
             $mail->Encoding = 'quoted-printable';
@@ -593,29 +617,68 @@ function block_moodle_sence_email_with_cc(
         }
         return (bool) $mail->send();
     } catch (\Throwable $e) {
-        debugging('block_moodle_sence CC mailer: ' . $e->getMessage(), DEBUG_DEVELOPER);
+        debugging('block_moodle_sence reminder mailer: ' . $e->getMessage(), DEBUG_DEVELOPER);
     }
 
-    // Fallback: correo al alumno + copia al emisor.
+    // Fallback: To alumno + CC/BCC como correos aparte.
     $ok = email_to_user($touser, $fromuser, $subject, $messagetext, $messagehtml);
-    if ($ok && (int) $fromuser->id !== (int) $touser->id) {
-        $ccsubject = get_string('reminder_cc_subject', 'block_moodle_sence', (object) [
+    if (!$ok) {
+        return false;
+    }
+
+    $preamble = get_string('reminder_cc_preamble', 'block_moodle_sence', (object) [
+        'fullname' => $toname,
+        'email' => $touser->email,
+    ]);
+    $ccsubject = get_string('reminder_cc_subject', 'block_moodle_sence', (object) [
+        'subject' => $subject,
+        'fullname' => $toname,
+    ]);
+    $html = $messagehtml !== '' ? $messagehtml : nl2br(s($messagetext));
+    $copyhtml = '<p>' . s($preamble) . '</p>' . $html;
+    $copytext = $preamble . "\n\n" . $messagetext;
+    $fromnoreply = core_user::get_noreply_user();
+
+    $i = 0;
+    foreach ($ccemails as $cc) {
+        $to = new stdClass();
+        $to->id = -80 - $i;
+        $to->email = $cc;
+        $to->firstname = 'SENCE';
+        $to->lastname = 'Copia';
+        $to->maildisplay = true;
+        $to->mailformat = 1;
+        $to->firstnamephonetic = '';
+        $to->lastnamephonetic = '';
+        $to->middlename = '';
+        $to->alternatename = '';
+        @email_to_user($to, $fromnoreply, $ccsubject, $copytext, $copyhtml);
+        $i++;
+    }
+
+    if (!empty($fromuser->email) && (int) $fromuser->id !== (int) $touser->id
+        && !in_array(strtolower($fromuser->email), $ccemails, true)) {
+        $bccsubject = get_string('reminder_bcc_subject', 'block_moodle_sence', (object) [
             'subject' => $subject,
             'fullname' => $toname,
         ]);
-        $preamble = get_string('reminder_cc_preamble', 'block_moodle_sence', (object) [
-            'fullname' => $toname,
-            'email' => $touser->email,
-        ]);
-        email_to_user(
-            $fromuser,
-            \core_user::get_noreply_user(),
-            $ccsubject,
-            $preamble . "\n\n" . $messagetext,
-            '<p>' . s($preamble) . '</p>' . ($messagehtml !== '' ? $messagehtml : nl2br(s($messagetext)))
-        );
+        @email_to_user($fromuser, $fromnoreply, $bccsubject, $copytext, $copyhtml);
     }
-    return $ok;
+
+    return true;
+}
+
+/**
+ * @deprecated desde 1.3.4 — usar block_moodle_sence_email_reminder().
+ */
+function block_moodle_sence_email_with_cc(
+    \stdClass $touser,
+    \stdClass $fromuser,
+    string $subject,
+    string $messagetext,
+    string $messagehtml = ''
+): bool {
+    return block_moodle_sence_email_reminder($touser, $fromuser, $subject, $messagetext, $messagehtml, []);
 }
 
 /**

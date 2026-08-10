@@ -30,6 +30,10 @@ class block_moodle_sence_edit_form extends block_edit_form {
         $mform->setType('config_correoalerta', PARAM_TEXT);
         $mform->addHelpButton('config_correoalerta', 'correoalerta', 'block_moodle_sence');
 
+        $mform->addElement('text', 'config_correorecordatorio', get_string('correorecordatorio', 'block_moodle_sence'), ['size' => 60]);
+        $mform->setType('config_correorecordatorio', PARAM_TEXT);
+        $mform->addHelpButton('config_correorecordatorio', 'correorecordatorio', 'block_moodle_sence');
+
         $mform->addElement('advcheckbox', 'config_forzarcierre', get_string('forzarcierre', 'block_moodle_sence'));
         $mform->setDefault('config_forzarcierre', 1);
 
