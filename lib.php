@@ -484,6 +484,66 @@ function block_moodle_sence_apply_testmode_codes(string $codsence, string $codig
 }
 
 /**
+ * Parsea correos de alerta (coma, punto y coma o salto de línea).
+ *
+ * @param string $raw
+ * @return string[]
+ */
+function block_moodle_sence_parse_alert_emails(string $raw): array {
+    $raw = trim($raw);
+    if ($raw === '') {
+        return [];
+    }
+    $parts = preg_split('/[\s,;]+/', $raw, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $emails = [];
+    foreach ($parts as $part) {
+        $email = strtolower(trim($part));
+        if ($email !== '' && validate_email($email)) {
+            $emails[$email] = $email;
+        }
+    }
+    return array_values($emails);
+}
+
+/**
+ * Envía alerta de error SENCE a uno o más correos configurados.
+ *
+ * @param string $rawemails
+ * @param string $subject
+ * @param string $bodytext
+ * @return int Cantidad enviada
+ */
+function block_moodle_sence_send_alert_emails(string $rawemails, string $subject, string $bodytext): int {
+    $emails = block_moodle_sence_parse_alert_emails($rawemails);
+    if (empty($emails)) {
+        return 0;
+    }
+
+    $from = core_user::get_noreply_user();
+    $html = nl2br(s($bodytext));
+    $sent = 0;
+    $i = 0;
+    foreach ($emails as $email) {
+        $to = new stdClass();
+        $to->id = -99 - $i;
+        $to->email = $email;
+        $to->firstname = 'SENCE';
+        $to->lastname = 'Alerta';
+        $to->maildisplay = true;
+        $to->mailformat = 1;
+        $to->firstnamephonetic = '';
+        $to->lastnamephonetic = '';
+        $to->middlename = '';
+        $to->alternatename = '';
+        if (@email_to_user($to, $from, $subject, $bodytext, $html)) {
+            $sent++;
+        }
+        $i++;
+    }
+    return $sent;
+}
+
+/**
  * Envía un correo con copia (CC) al usuario que dispara la acción.
  * Usa get_mailer para CC real; si falla, envía al destinatario y una copia aparte al emisor.
  *

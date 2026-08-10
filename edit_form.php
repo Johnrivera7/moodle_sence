@@ -26,8 +26,9 @@ class block_moodle_sence_edit_form extends block_edit_form {
         $mform->addElement('text', 'config_grupobecas', get_string('grupobecas', 'block_moodle_sence'), ['size' => 40]);
         $mform->setType('config_grupobecas', PARAM_TEXT);
 
-        $mform->addElement('text', 'config_correoalerta', get_string('correoalerta', 'block_moodle_sence'), ['size' => 45]);
-        $mform->setType('config_correoalerta', PARAM_EMAIL);
+        $mform->addElement('text', 'config_correoalerta', get_string('correoalerta', 'block_moodle_sence'), ['size' => 60]);
+        $mform->setType('config_correoalerta', PARAM_TEXT);
+        $mform->addHelpButton('config_correoalerta', 'correoalerta', 'block_moodle_sence');
 
         $mform->addElement('advcheckbox', 'config_forzarcierre', get_string('forzarcierre', 'block_moodle_sence'));
         $mform->setDefault('config_forzarcierre', 1);

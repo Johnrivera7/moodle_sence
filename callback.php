@@ -72,14 +72,7 @@ if ($iserror) {
         }
         $body .= "\n\n--- POST SENCE ---\n" . print_r($post, true);
 
-        $to = new stdClass();
-        $to->id = -1;
-        $to->email = $config->correoalerta;
-        $to->firstname = 'SENCE';
-        $to->lastname = 'Alerta';
-        $to->maildisplay = true;
-        $to->mailformat = 1;
-        @email_to_user($to, core_user::get_noreply_user(), $subject, $body, nl2br(s($body)));
+        block_moodle_sence_send_alert_emails((string) $config->correoalerta, $subject, $body);
     }
 } else {
     $idsesionsence = trim($post['IdSesionSence'] ?? '');

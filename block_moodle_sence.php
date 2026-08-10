@@ -271,8 +271,9 @@ class block_moodle_sence extends block_base {
         }
 
         $correo = trim((string) ($config->correoalerta ?? ''));
-        if ($correo !== '') {
-            $out .= html_writer::tag('p', get_string('managercorreo', 'block_moodle_sence', $correo));
+        $emails = block_moodle_sence_parse_alert_emails($correo);
+        if (!empty($emails)) {
+            $out .= html_writer::tag('p', get_string('managercorreo', 'block_moodle_sence', implode(', ', $emails)));
         } else {
             $out .= html_writer::tag('p', get_string('managercorreo_none', 'block_moodle_sence'));
         }
