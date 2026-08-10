@@ -291,6 +291,22 @@ class block_moodle_sence extends block_base {
             ['class' => 'block-moodle-sence-codes']
         );
 
+        $context = context_course::instance((int) $course->id);
+        if (has_capability('block/moodle_sence:viewreport', $context) && !empty($this->instance->id)) {
+            $reporturl = new moodle_url('/blocks/moodle_sence/report.php', [
+                'courseid' => $course->id,
+                'instanceid' => $this->instance->id,
+            ]);
+            $out .= html_writer::div(
+                html_writer::link(
+                    $reporturl,
+                    get_string('report_open', 'block_moodle_sence'),
+                    ['class' => 'btn btn-primary block-moodle-sence-btn']
+                ),
+                'block-moodle-sence-manager-actions mt-3'
+            );
+        }
+
         $out .= html_writer::end_div();
         return $out;
     }

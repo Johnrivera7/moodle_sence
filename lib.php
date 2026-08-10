@@ -289,6 +289,130 @@ function block_moodle_sence_glosa_message($code): string {
 }
 
 /**
+ * Tip operativo por glosa (qué revisar).
+ *
+ * @param int|string $code
+ * @return string
+ */
+function block_moodle_sence_glosa_tip($code): string {
+    $code = (int) $code;
+    $key = 'glosa' . $code . '_tip';
+    if (get_string_manager()->string_exists($key, 'block_moodle_sence')) {
+        return get_string($key, 'block_moodle_sence');
+    }
+    return '';
+}
+
+/**
+ * Persiste intento de error SENCE para el reporte del curso.
+ *
+ * @param int $courseid
+ * @param int $userid
+ * @param string $run
+ * @param array $codes
+ * @param int $glosa
+ * @param array $post
+ * @return int
+ */
+function block_moodle_sence_log_error(
+    int $courseid,
+    int $userid,
+    string $run,
+    array $codes,
+    int $glosa,
+    array $post = []
+): int {
+    global $DB;
+
+    if (!$DB->get_manager()->table_exists('block_moodle_sence_log')) {
+        return 0;
+    }
+
+    $rec = (object) [
+        'courseid' => $courseid,
+        'userid' => $userid,
+        'runalumno' => rut_helper::format_run($run),
+        'codsence' => (string) ($codes['codsence'] ?? ($post['CodSence'] ?? '')),
+        'codcurso' => (string) ($codes['codigocurso'] ?? ($post['CodigoCurso'] ?? '')),
+        'idaccion' => (string) ($codes['idaccion'] ?? ($codes['codigocurso'] ?? '')),
+        'glosa' => $glosa,
+        'idsesionalumno' => (string) ($post['IdSesionAlumno'] ?? ''),
+        'status' => 'error',
+        'timecreated' => time(),
+        'rawdata' => json_encode($post, JSON_UNESCAPED_UNICODE),
+    ];
+    return (int) $DB->insert_record('block_moodle_sence_log', $rec);
+}
+
+/**
+ * Contexto HTML enriquecido para pantallas/correos de error.
+ *
+ * @param \stdClass $course
+ * @param \stdClass $user
+ * @param \stdClass $config
+ * @param int $glosa
+ * @param array $post
+ * @return array{codes:array,run:string,courseurl:\moodle_url,groups:string,html:string,text:string}
+ */
+function block_moodle_sence_format_error_context(
+    \stdClass $course,
+    \stdClass $user,
+    \stdClass $config,
+    int $glosa,
+    array $post = []
+): array {
+    $codes = block_moodle_sence_resolve_runtime_codes($config, (int) $course->id, (int) $user->id);
+    $run = block_moodle_sence_resolve_user_run($user);
+    $courseurl = new \moodle_url('/course/view.php', ['id' => $course->id]);
+    $glosatext = block_moodle_sence_glosa_message($glosa);
+    $tip = block_moodle_sence_glosa_tip($glosa);
+    $tiphtml = $tip !== ''
+        ? \html_writer::div(s($tip), 'block-moodle-sence-error-card__tip')
+        : '';
+
+    $groups = groups_get_all_groups((int) $course->id, (int) $user->id, 0, 'g.id,g.name');
+    $groupnames = implode(', ', array_map(static function ($g) {
+        return $g->name;
+    }, $groups));
+
+    $a = (object) [
+        'code' => $glosa,
+        'message' => $glosatext,
+        'tip' => $tiphtml,
+        'tiptext' => $tip !== '' ? $tip : '—',
+        'fullname' => fullname($user),
+        'run' => $run,
+        'coursename' => format_string($course->fullname),
+        'shortname' => $course->shortname,
+        'courseurl' => $courseurl->out(false),
+        'codsence' => $codes['codsence'] !== '' ? $codes['codsence'] : ($post['CodSence'] ?? '—'),
+        'codigocurso' => $codes['codigocurso'] !== '' ? $codes['codigocurso'] : ($post['CodigoCurso'] ?? '—'),
+        'idaccion' => $codes['idaccion'] !== '' ? $codes['idaccion'] : '—',
+        'otec' => block_moodle_sence_get_rut_otec(),
+        'groups' => $groupnames !== '' ? $groupnames : '—',
+        'fechahora' => $post['FechaHora'] ?? userdate(time()),
+        'zona' => $post['ZonaHoraria'] ?? '',
+        'linea' => $post['LineaCapacitacion'] ?? ($config->lineasdecap ?? 3),
+        'idsesionalumno' => $post['IdSesionAlumno'] ?? '',
+    ];
+
+    $text = get_string('senceerror_detail_text', 'block_moodle_sence', (object) array_merge(
+        (array) $a,
+        ['tip' => $a->tiptext]
+    ));
+
+    return [
+        'codes' => $codes,
+        'run' => $run,
+        'courseurl' => $courseurl,
+        'groups' => $groupnames,
+        'html' => get_string('senceerror_detail_html', 'block_moodle_sence', $a),
+        'text' => $text,
+        'a' => $a,
+    ];
+}
+
+/**
  * RUT alumno desde profile_field_rut (único); fallback idnumber/username.
  *
  * @param \stdClass $user
@@ -357,6 +481,81 @@ function block_moodle_sence_apply_testmode_codes(string $codsence, string $codig
         $codigocurso = '-1';
     }
     return [$codsence, $codigocurso];
+}
+
+/**
+ * Envía un correo con copia (CC) al usuario que dispara la acción.
+ * Usa get_mailer para CC real; si falla, envía al destinatario y una copia aparte al emisor.
+ *
+ * @param \stdClass $touser
+ * @param \stdClass $fromuser Remitente / quien hace clic
+ * @param string $subject
+ * @param string $messagetext
+ * @param string $messagehtml
+ * @return bool
+ */
+function block_moodle_sence_email_with_cc(
+    \stdClass $touser,
+    \stdClass $fromuser,
+    string $subject,
+    string $messagetext,
+    string $messagehtml = ''
+): bool {
+    global $CFG;
+
+    if (empty($touser->email) || empty($fromuser->email)) {
+        return false;
+    }
+
+    $toname = fullname($touser);
+    $fromname = fullname($fromuser);
+    $noreply = !empty($CFG->noreplyaddress) ? $CFG->noreplyaddress : $fromuser->email;
+
+    try {
+        $mail = get_mailer();
+        $mail->Sender = $noreply;
+        $mail->From = $noreply;
+        $mail->FromName = $fromname;
+        $mail->addReplyTo($fromuser->email, $fromname);
+        $mail->Subject = substr($subject, 0, 900);
+        $mail->addAddress($touser->email, $toname);
+        if ((int) $fromuser->id !== (int) $touser->id) {
+            $mail->addCC($fromuser->email, $fromname);
+        }
+        if ($messagehtml !== '') {
+            $mail->isHTML(true);
+            $mail->Encoding = 'quoted-printable';
+            $mail->Body = $messagehtml;
+            $mail->AltBody = $messagetext;
+        } else {
+            $mail->isHTML(false);
+            $mail->Body = $messagetext;
+        }
+        return (bool) $mail->send();
+    } catch (\Throwable $e) {
+        debugging('block_moodle_sence CC mailer: ' . $e->getMessage(), DEBUG_DEVELOPER);
+    }
+
+    // Fallback: correo al alumno + copia al emisor.
+    $ok = email_to_user($touser, $fromuser, $subject, $messagetext, $messagehtml);
+    if ($ok && (int) $fromuser->id !== (int) $touser->id) {
+        $ccsubject = get_string('reminder_cc_subject', 'block_moodle_sence', (object) [
+            'subject' => $subject,
+            'fullname' => $toname,
+        ]);
+        $preamble = get_string('reminder_cc_preamble', 'block_moodle_sence', (object) [
+            'fullname' => $toname,
+            'email' => $touser->email,
+        ]);
+        email_to_user(
+            $fromuser,
+            \core_user::get_noreply_user(),
+            $ccsubject,
+            $preamble . "\n\n" . $messagetext,
+            '<p>' . s($preamble) . '</p>' . ($messagehtml !== '' ? $messagehtml : nl2br(s($messagetext)))
+        );
+    }
+    return $ok;
 }
 
 /**

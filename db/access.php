@@ -18,4 +18,14 @@ $capabilities = [
         ],
         'clonepermissionsfrom' => 'moodle/site:manageblocks',
     ],
+    'block/moodle_sence:viewreport' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'teacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+        'clonepermissionsfrom' => 'moodle/course:viewhiddenactivities',
+    ],
 ];

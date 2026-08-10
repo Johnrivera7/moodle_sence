@@ -61,6 +61,35 @@ function xmldb_block_moodle_sence_ensure_meta_table(): void {
 }
 
 /**
+ * Log de errores RCE para el reporte por curso.
+ */
+function xmldb_block_moodle_sence_ensure_log_table(): void {
+    global $DB;
+    $dbman = $DB->get_manager();
+    $table = new xmldb_table('block_moodle_sence_log');
+    if ($dbman->table_exists($table)) {
+        return;
+    }
+
+    $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+    $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+    $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+    $table->add_field('runalumno', XMLDB_TYPE_CHAR, '20', null, null, null, null);
+    $table->add_field('codsence', XMLDB_TYPE_CHAR, '50', null, null, null, null);
+    $table->add_field('codcurso', XMLDB_TYPE_CHAR, '100', null, null, null, null);
+    $table->add_field('idaccion', XMLDB_TYPE_CHAR, '100', null, null, null, null);
+    $table->add_field('glosa', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+    $table->add_field('idsesionalumno', XMLDB_TYPE_CHAR, '100', null, null, null, null);
+    $table->add_field('status', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, 'error');
+    $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+    $table->add_field('rawdata', XMLDB_TYPE_TEXT, null, null, null, null, null);
+    $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+    $table->add_index('courseid_status', XMLDB_INDEX_NOTUNIQUE, ['courseid', 'status']);
+    $table->add_index('userid_courseid', XMLDB_INDEX_NOTUNIQUE, ['userid', 'courseid']);
+    $dbman->create_table($table);
+}
+
+/**
  * Migra ajustes globales desde el component block_sence si existen en config_plugins.
  */
 function xmldb_block_moodle_sence_migrate_legacy_config(): void {

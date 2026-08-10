@@ -16,5 +16,10 @@ function xmldb_block_moodle_sence_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2026080710, 'moodle_sence');
     }
 
+    if ($oldversion < 2026081010) {
+        xmldb_block_moodle_sence_ensure_log_table();
+        upgrade_block_savepoint(true, 2026081010, 'moodle_sence');
+    }
+
     return true;
 }

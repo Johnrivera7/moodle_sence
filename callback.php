@@ -34,6 +34,7 @@ $PAGE->set_url(new moodle_url('/blocks/moodle_sence/callback.php', [
 $PAGE->set_context(context_course::instance($courseid));
 $PAGE->set_title(get_string('callbacktitle', 'block_moodle_sence'));
 $PAGE->set_heading($course->fullname);
+$PAGE->requires->css('/blocks/moodle_sence/styles.css');
 
 $post = $_POST;
 $glosa = isset($post['GlosaError']) ? (int) $post['GlosaError'] : 0;
@@ -43,43 +44,42 @@ $autoredirect = false;
 echo $OUTPUT->header();
 
 if ($iserror) {
+    $ctx = block_moodle_sence_format_error_context($course, $USER, $config, $glosa, $post);
+    block_moodle_sence_log_error(
+        $courseid,
+        (int) $USER->id,
+        $ctx['run'],
+        $ctx['codes'],
+        $glosa,
+        $post
+    );
+
     if ($glosa === 100) {
         $msg = get_string('glosa100', 'block_moodle_sence');
         echo html_writer::div($msg, 'alert alert-danger block-moodle-sence-callback-error', ['role' => 'alert']);
     } else {
-        $glosatext = block_moodle_sence_glosa_message($glosa);
-        $msg = get_string('senceerrorfull', 'block_moodle_sence', (object) [
+        echo html_writer::div($ctx['html'], 'block-moodle-sence-callback-error', ['role' => 'alert']);
+    }
+
+    if (!empty($config->correoalerta)) {
+        $subject = get_string('alert_email_subject', 'block_moodle_sence', (object) [
             'code' => $glosa,
-            'message' => $glosatext,
+            'shortname' => $course->shortname,
         ]);
-        echo $OUTPUT->notification($msg, 'error');
-
-        if (!empty($config->correoalerta)) {
-            $codes = block_moodle_sence_resolve_runtime_codes($config, $courseid, $USER->id);
-            $run = block_moodle_sence_resolve_user_run($USER);
-            $subject = 'Alerta Error SENCE';
-            $body = "Se ha producido un error interno en la integración con SENCE\n";
-            $body .= 'Error: ' . $glosatext . ' (' . $glosa . ")\n";
-            $body .= 'Nombre Usuario: ' . fullname($USER) . "\n";
-            $body .= 'RUT Usuario: ' . $run . "\n";
-            $body .= 'ID Acción: ' . $codes['idaccion'] . "\n";
-            $body .= 'Código: ' . $codes['codigocurso'] . "\n";
-            $body .= 'OTEC: ' . block_moodle_sence_get_rut_otec() . "\n\n";
-            if (in_array($glosa, [300, 304, 305], true)) {
-                $body .= "Reportar a controlelearning@sence.cl\n";
-                $body .= 'Código Error: ' . $glosa . "\n";
-            }
-            $body .= "\n" . print_r($post, true);
-
-            $to = new stdClass();
-            $to->id = -1;
-            $to->email = $config->correoalerta;
-            $to->firstname = 'SENCE';
-            $to->lastname = 'Alerta';
-            $to->maildisplay = true;
-            $to->mailformat = 1;
-            @email_to_user($to, core_user::get_noreply_user(), $subject, $body, $body);
+        $body = $ctx['text'];
+        if (in_array($glosa, [300, 304, 305], true)) {
+            $body .= "\n\n" . get_string('alert_email_sence_support', 'block_moodle_sence');
         }
+        $body .= "\n\n--- POST SENCE ---\n" . print_r($post, true);
+
+        $to = new stdClass();
+        $to->id = -1;
+        $to->email = $config->correoalerta;
+        $to->firstname = 'SENCE';
+        $to->lastname = 'Alerta';
+        $to->maildisplay = true;
+        $to->mailformat = 1;
+        @email_to_user($to, core_user::get_noreply_user(), $subject, $body, nl2br(s($body)));
     }
 } else {
     $idsesionsence = trim($post['IdSesionSence'] ?? '');

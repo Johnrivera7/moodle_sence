@@ -316,3 +316,188 @@ html[data-bs-theme="dark"] .block-moodle-sence-gate {
         linear-gradient(180deg, #0b1724, #101f30),
         radial-gradient(circle at top right, rgba(51, 122, 183, 0.28), transparent 55%);
 }
+
+/* Callback error detalle */
+.block-moodle-sence-error-card {
+    background: var(--bms-surface);
+    border: 1px solid var(--bms-border);
+    border-left: 4px solid var(--bms-danger);
+    border-radius: var(--bms-radius);
+    padding: 1.1rem 1.2rem;
+    box-shadow: var(--bms-shadow);
+    max-width: 46rem;
+}
+
+.block-moodle-sence-error-card h3 {
+    margin: 0 0 0.5rem;
+    color: var(--bms-danger);
+    font-size: 1.2rem;
+}
+
+.block-moodle-sence-error-card__msg {
+    margin: 0 0 0.75rem;
+}
+
+.block-moodle-sence-error-card__tip {
+    margin: 0 0 1rem;
+    padding: 0.7rem 0.85rem;
+    background: color-mix(in srgb, var(--bms-warn) 12%, var(--bms-surface));
+    border-radius: 8px;
+    color: var(--bms-ink);
+    font-size: 0.92rem;
+}
+
+/* Reporte gestor */
+.block-moodle-sence-report {
+    margin-bottom: 2rem;
+}
+
+.block-moodle-sence-report__summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0 1.25rem;
+}
+
+.block-moodle-sence-report__summary > a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.block-moodle-sence-report__card {
+    border: 1px solid var(--bms-border);
+    border-radius: var(--bms-radius);
+    padding: 0.85rem 0.9rem;
+    background: var(--bms-surface-soft);
+    min-height: 4.5rem;
+}
+
+.block-moodle-sence-report__card.is-active {
+    outline: 2px solid var(--bms-blue);
+}
+
+.block-moodle-sence-report__count {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--bms-navy);
+    line-height: 1.1;
+}
+
+.block-moodle-sence-report__label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--bms-muted);
+    margin-top: 0.25rem;
+}
+
+.block-moodle-sence-report__card--ok .block-moodle-sence-report__count { color: var(--bms-ok); }
+.block-moodle-sence-report__card--error .block-moodle-sence-report__count { color: var(--bms-danger); }
+.block-moodle-sence-report__card--course_no_sence .block-moodle-sence-report__count { color: var(--bms-warn); }
+
+.block-moodle-sence-report__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.block-moodle-sence-report__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    flex: 1 1 auto;
+}
+
+.block-moodle-sence-report__filter {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid var(--bms-border);
+    background: var(--bms-surface);
+    color: var(--bms-navy);
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.block-moodle-sence-report__filter.is-active {
+    background: var(--bms-navy);
+    color: #fff;
+    border-color: var(--bms-navy);
+}
+
+.block-moodle-sence-report__badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.block-moodle-sence-report__badge--ok {
+    background: color-mix(in srgb, var(--bms-ok) 18%, white);
+    color: var(--bms-ok);
+}
+
+.block-moodle-sence-report__badge--error {
+    background: color-mix(in srgb, var(--bms-danger) 16%, white);
+    color: var(--bms-danger);
+}
+
+.block-moodle-sence-report__badge--course_no_sence {
+    background: color-mix(in srgb, var(--bms-warn) 16%, white);
+    color: var(--bms-warn);
+}
+
+.block-moodle-sence-report__badge--never,
+.block-moodle-sence-report__badge--nogroup {
+    background: color-mix(in srgb, var(--bms-navy) 10%, white);
+    color: var(--bms-navy);
+}
+
+.block-moodle-sence-report__badge--becado {
+    background: color-mix(in srgb, var(--bms-blue) 14%, white);
+    color: var(--bms-blue-dark);
+}
+
+.block-moodle-sence-report__err {
+    font-weight: 600;
+    color: var(--bms-danger);
+}
+
+.block-moodle-sence-report__tip {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--bms-muted);
+}
+
+.block-moodle-sence-report__table td {
+    vertical-align: top;
+}
+
+.block-moodle-sence-manager-actions .block-moodle-sence-btn {
+    width: auto;
+    display: inline-block;
+    padding: 0.55rem 0.9rem;
+}
+
+.block-moodle-sence-report__hint {
+    font-size: 0.9rem;
+    color: var(--bms-muted);
+    margin: 0 0 1rem;
+}
+
+.block-moodle-sence-reminder-preview {
+    max-width: 40rem;
+    margin: 1rem 0 0;
+    padding-left: 1.2rem;
+}
+
+.block-moodle-sence-report__toolbar .btn.disabled,
+.block-moodle-sence-report__toolbar span.btn.disabled {
+    opacity: 0.55;
+    pointer-events: none;
+    cursor: not-allowed;
+}
