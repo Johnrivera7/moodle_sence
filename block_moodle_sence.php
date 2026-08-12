@@ -119,21 +119,46 @@ class block_moodle_sence extends block_base {
 
         if ($session && !empty($session->idsesionsence)) {
             $remaining = session_manager::seconds_remaining($session, $maxseconds);
+            $expired = ($remaining <= 0);
             $alertmsg = !empty($config->alertafinal)
                 ? $config->alertafinal
                 : get_string('defaultalert', 'block_moodle_sence');
 
+            $panelclass = 'block-moodle-sence-panel block-moodle-sence-panel--session';
+            if ($expired) {
+                $panelclass .= ' block-moodle-sence-panel--gate block-moodle-sence-panel--logout-gate';
+            }
+
+            $out .= html_writer::start_div($panelclass, [
+                'id' => 'block-moodle-sence-session-panel',
+                'data-expired' => $expired ? '1' : '0',
+            ]);
             $out .= html_writer::div(
-                html_writer::tag('p', get_string('sessionactive', 'block_moodle_sence'), ['class' => 'block-moodle-sence__title']) .
-                html_writer::tag('p', get_string('sessionactive_mustclose', 'block_moodle_sence'), ['class' => 'block-moodle-sence__text']),
-                'block-moodle-sence-card block-moodle-sence-card--success'
+                html_writer::span('SENCE', 'block-moodle-sence-brand__mark') .
+                html_writer::span(get_string('brand_subtitle', 'block_moodle_sence'), 'block-moodle-sence-brand__sub'),
+                'block-moodle-sence-brand'
             );
-            $out .= html_writer::tag('p', get_string('timerhelp', 'block_moodle_sence'), ['class' => 'block-moodle-sence__hint']);
+
+            if ($expired) {
+                $out .= html_writer::div(
+                    html_writer::tag('p', get_string('session_expired_title', 'block_moodle_sence'), ['class' => 'block-moodle-sence__title']) .
+                    html_writer::tag('p', get_string('session_expired_mustclose', 'block_moodle_sence'), ['class' => 'block-moodle-sence__text']),
+                    'block-moodle-sence-card block-moodle-sence-card--danger',
+                    ['role' => 'alert']
+                );
+            } else {
+                $out .= html_writer::div(
+                    html_writer::tag('p', get_string('sessionactive', 'block_moodle_sence'), ['class' => 'block-moodle-sence__title']) .
+                    html_writer::tag('p', get_string('sessionactive_mustclose', 'block_moodle_sence'), ['class' => 'block-moodle-sence__text']),
+                    'block-moodle-sence-card block-moodle-sence-card--success'
+                );
+                $out .= html_writer::tag('p', get_string('timerhelp', 'block_moodle_sence'), ['class' => 'block-moodle-sence__hint']);
+            }
 
             $out .= html_writer::div(
                 html_writer::tag('span', get_string('timerlabel', 'block_moodle_sence'), ['class' => 'block-moodle-sence-timer__label']) .
                 html_writer::tag('strong', '00:00:00', ['id' => 'block-moodle-sence-countdown', 'class' => 'block-moodle-sence-timer__value']),
-                'block-moodle-sence-timer',
+                'block-moodle-sence-timer' . ($expired ? ' block-moodle-sence-timer--warn' : ''),
                 [
                     'id' => 'block-moodle-sence-timer',
                     'data-remaining' => $remaining,
@@ -143,8 +168,6 @@ class block_moodle_sence extends block_base {
                     'data-expiremsg' => get_string('session_expired_closing', 'block_moodle_sence'),
                 ]
             );
-
-            $out .= html_writer::script($this->timer_js());
 
             $logoutfields = block_moodle_sence_build_logout_fields(
                 $config,
@@ -164,7 +187,30 @@ class block_moodle_sence extends block_base {
                 get_string('cerrarsesion_help', 'block_moodle_sence'),
                 ['class' => 'block-moodle-sence__help']
             );
+            $out .= html_writer::end_div();
+
+            // Barra fija: visible aunque cierren el cajón del bloque.
+            $out .= html_writer::div(
+                html_writer::div(
+                    html_writer::span(get_string('timerlabel', 'block_moodle_sence') . ': ', 'block-moodle-sence-sticky__label') .
+                    html_writer::tag('strong', '00:00:00', ['id' => 'block-moodle-sence-sticky-countdown', 'class' => 'block-moodle-sence-sticky__time']),
+                    'block-moodle-sence-sticky__left'
+                ) .
+                html_writer::tag('button', get_string('cerrarsesion', 'block_moodle_sence'), [
+                    'type' => 'button',
+                    'id' => 'block-moodle-sence-sticky-close',
+                    'class' => 'btn block-moodle-sence-btn block-moodle-sence-sticky__btn',
+                ]),
+                'block-moodle-sence-sticky',
+                ['id' => 'block-moodle-sence-sticky', 'aria-live' => 'polite']
+            );
+
+            $out .= html_writer::script($this->timer_js());
             $out .= html_writer::script($this->logout_intercept_js());
+            $out .= html_writer::script($this->session_keepalive_js());
+            if ($expired) {
+                $out .= html_writer::script($this->gate_js('.block-moodle-sence-panel--logout-gate'));
+            }
         } else {
             if (!block_moodle_sence_is_valid_run($run)) {
                 $editurl = block_moodle_sence_profile_rut_edit_url((int) $USER->id);
@@ -331,13 +377,16 @@ class block_moodle_sence extends block_base {
     }
 
     /**
-     * Gate: muestra el bloque cubriendo #region-main hasta registrar asistencia.
+     * Gate: cubre #region-main con el panel SENCE (login o cierre).
      *
+     * @param string $sourceselector
      * @return string
      */
-    protected function gate_js(): string {
-        return <<<'JS'
+    protected function gate_js(string $sourceselector = '.block-moodle-sence-panel--gate'): string {
+        $selector = json_encode($sourceselector);
+        return <<<JS
 (function () {
+  var sourceSelector = {$selector};
   function run() {
     document.body.classList.add('block-moodle-sence-gated');
     var main = document.getElementById('region-main');
@@ -345,10 +394,16 @@ class block_moodle_sence extends block_base {
     if (!main || !block) {
       return;
     }
-    var source = block.querySelector('.block-moodle-sence-panel--gate')
+    if (document.getElementById('block-moodle-sence-gate-root')) {
+      return;
+    }
+    var source = block.querySelector(sourceSelector)
+      || block.querySelector('.block-moodle-sence-panel--gate')
+      || block.querySelector('.block-moodle-sence-panel--logout-gate')
       || block.querySelector('.card-text, .content, [data-region="content"]')
       || block;
     var gate = document.createElement('div');
+    gate.id = 'block-moodle-sence-gate-root';
     gate.className = 'block-moodle-sence-gate';
     gate.setAttribute('role', 'dialog');
     gate.setAttribute('aria-modal', 'true');
@@ -365,12 +420,61 @@ class block_moodle_sence extends block_base {
   } else {
     run();
   }
+  window.blockMoodleSenceShowGate = run;
 })();
 JS;
     }
 
     /**
-     * Cronómetro: alerta a 900s; color a 1800s; al llegar a 0 envía cierre SENCE.
+     * Mantiene visible el cierre: barra fija + reabre cajón + gate al expirar.
+     *
+     * @return string
+     */
+    protected function session_keepalive_js(): string {
+        return <<<'JS'
+(function () {
+  function openDrawers() {
+    document.body.classList.add('block-moodle-sence-session-open');
+    document.querySelectorAll('.drawer').forEach(function (d) {
+      d.classList.add('show');
+      d.classList.remove('hidden');
+      d.style.visibility = 'visible';
+    });
+    document.querySelectorAll('[data-action="closedrawer"]').forEach(function (btn) {
+      btn.setAttribute('disabled', 'disabled');
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.35';
+      btn.title = '';
+    });
+  }
+  function bindSticky() {
+    var stickyBtn = document.getElementById('block-moodle-sence-sticky-close');
+    if (!stickyBtn) {
+      return;
+    }
+    stickyBtn.addEventListener('click', function () {
+      var form = document.getElementById('block-moodle-sence-logout-form');
+      if (form) {
+        form.submit();
+      }
+    });
+  }
+  function run() {
+    openDrawers();
+    bindSticky();
+    window.setInterval(openDrawers, 2000);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+})();
+JS;
+    }
+
+    /**
+     * Cronómetro: alerta a 900s; al llegar a 0 bloquea pantalla y envía cierre SENCE.
      *
      * @return string
      */
@@ -379,6 +483,7 @@ JS;
 (function () {
   var box = document.getElementById('block-moodle-sence-timer');
   var el = document.getElementById('block-moodle-sence-countdown');
+  var stickyEl = document.getElementById('block-moodle-sence-sticky-countdown');
   if (!box || !el) {
     return;
   }
@@ -409,21 +514,60 @@ JS;
     }
     banner.innerHTML = '<h3>' + (text || msg) + '</h3>';
   };
+  var showExpireGate = function () {
+    document.body.classList.add('block-moodle-sence-gated', 'block-moodle-sence-session-expired');
+    var panel = document.getElementById('block-moodle-sence-session-panel');
+    if (panel) {
+      panel.classList.add('block-moodle-sence-panel--gate', 'block-moodle-sence-panel--logout-gate');
+    }
+    if (typeof window.blockMoodleSenceShowGate === 'function') {
+      window.blockMoodleSenceShowGate();
+    } else {
+      var main = document.getElementById('region-main');
+      var block = document.querySelector('.block_moodle_sence');
+      if (!main || !block || document.getElementById('block-moodle-sence-gate-root')) {
+        return;
+      }
+      var source = block.querySelector('.block-moodle-sence-panel--logout-gate')
+        || block.querySelector('#block-moodle-sence-session-panel')
+        || block;
+      var gate = document.createElement('div');
+      gate.id = 'block-moodle-sence-gate-root';
+      gate.className = 'block-moodle-sence-gate';
+      gate.setAttribute('role', 'dialog');
+      gate.setAttribute('aria-modal', 'true');
+      var shell = document.createElement('div');
+      shell.className = 'block-moodle-sence-gate__shell';
+      shell.appendChild(source.cloneNode(true));
+      gate.appendChild(shell);
+      main.innerHTML = '';
+      main.appendChild(gate);
+    }
+  };
   var submitLogout = function () {
     if (closing) {
       return;
     }
     closing = true;
     showBanner(expireMsg);
-    var form = document.getElementById('block-moodle-sence-logout-form');
+    showExpireGate();
+    var form = document.getElementById('block-moodle-sence-logout-form')
+      || document.querySelector('#block-moodle-sence-gate-root #block-moodle-sence-logout-form');
     if (form) {
-      try { form.submit(); } catch (e) {}
+      window.setTimeout(function () {
+        try { form.submit(); } catch (e) {}
+      }, 400);
     }
   };
   var tick = function () {
-    el.textContent = left > 0 ? fmt(left) : '00:00:00';
+    var text = left > 0 ? fmt(left) : '00:00:00';
+    el.textContent = text;
+    if (stickyEl) {
+      stickyEl.textContent = text;
+    }
     if (left < warnAt) {
       box.classList.add('block-moodle-sence-timer--warn');
+      document.body.classList.add('block-moodle-sence-session-warn');
     } else {
       box.classList.remove('block-moodle-sence-timer--warn');
     }
