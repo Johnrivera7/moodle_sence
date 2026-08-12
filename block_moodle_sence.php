@@ -410,7 +410,12 @@ class block_moodle_sence extends block_base {
     gate.setAttribute('aria-label', 'SENCE');
     var shell = document.createElement('div');
     shell.className = 'block-moodle-sence-gate__shell';
-    shell.appendChild(source.cloneNode(true));
+    var moveNode = String(sourceSelector).indexOf('logout') !== -1;
+    if (moveNode) {
+      shell.appendChild(source);
+    } else {
+      shell.appendChild(source.cloneNode(true));
+    }
     gate.appendChild(shell);
     main.innerHTML = '';
     main.appendChild(gate);
@@ -538,7 +543,7 @@ JS;
       gate.setAttribute('aria-modal', 'true');
       var shell = document.createElement('div');
       shell.className = 'block-moodle-sence-gate__shell';
-      shell.appendChild(source.cloneNode(true));
+      shell.appendChild(source);
       gate.appendChild(shell);
       main.innerHTML = '';
       main.appendChild(gate);
