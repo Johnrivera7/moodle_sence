@@ -159,6 +159,7 @@ echo html_writer::tag('p', get_string('report_intro', 'block_moodle_sence', (obj
 echo html_writer::start_div('block-moodle-sence-report__summary');
 $cards = [
     'ok' => report_builder::STATUS_OK,
+    'open' => report_builder::STATUS_OPEN,
     'error' => report_builder::STATUS_ERROR,
     'course_no_sence' => report_builder::STATUS_COURSE_NO_SENCE,
     'never' => report_builder::STATUS_NEVER,
@@ -179,6 +180,7 @@ echo html_writer::end_div();
 $filters = [
     'all' => get_string('report_filter_all', 'block_moodle_sence') . ' (' . $summary['total'] . ')',
     report_builder::STATUS_OK => get_string('report_status_ok', 'block_moodle_sence'),
+    report_builder::STATUS_OPEN => get_string('report_status_open', 'block_moodle_sence'),
     report_builder::STATUS_ERROR => get_string('report_status_error', 'block_moodle_sence'),
     report_builder::STATUS_COURSE_NO_SENCE => get_string('report_status_course_no_sence', 'block_moodle_sence'),
     report_builder::STATUS_NEVER => get_string('report_status_never', 'block_moodle_sence'),
@@ -252,6 +254,8 @@ foreach ($rows as $r) {
         $detail = get_string('report_tip_never', 'block_moodle_sence');
     } else if ($r->status === report_builder::STATUS_NOGROUP) {
         $detail = get_string('report_tip_nogroup', 'block_moodle_sence');
+    } else if ($r->status === report_builder::STATUS_OPEN) {
+        $detail = get_string('report_tip_open', 'block_moodle_sence', format_time(max(0, (int) $r->remaining)));
     }
 
     $statusbadge = html_writer::span(
@@ -267,9 +271,12 @@ foreach ($rows as $r) {
             'userid' => $r->userid,
             'sesskey' => sesskey(),
         ]);
+        $btnlabel = ($r->status === report_builder::STATUS_OPEN)
+            ? get_string('reminder_close_button', 'block_moodle_sence')
+            : get_string('reminder_user_button', 'block_moodle_sence');
         $actioncell = html_writer::link(
             $remindurl,
-            get_string('reminder_user_button', 'block_moodle_sence'),
+            $btnlabel,
             [
                 'class' => 'btn btn-sm btn-warning',
                 'title' => get_string('reminder_user_button_help', 'block_moodle_sence'),

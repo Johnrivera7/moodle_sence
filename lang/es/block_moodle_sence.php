@@ -9,6 +9,7 @@ $string['codigocurso_help'] = 'Formato: CodSence/CodigoCurso (ej. 1234567890/MI-
 $string['codigocurso_invalid'] = 'El Código SENCE del curso debe tener 10 dígitos, formato CodSence/CodigoCurso, o MULTIPLES.';
 $string['grupobecas'] = 'Grupos becarios (separados por coma)';
 $string['alertafinal'] = 'Mensaje alerta final de sesión';
+$string['alertafinal_help'] = 'Texto que se muestra en pantalla (banner/alerta) cuando quedan 15 minutos de sesión SENCE.';
 $string['correoalerta'] = 'Correos alertas de error';
 $string['correoalerta_help'] = 'Uno o más correos separados por coma, punto y coma o espacio. Ejemplo: soporte@otec.cl, coordinacion@otec.cl';
 $string['correorecordatorio'] = 'Correos copia (CC) de recordatorios';
@@ -18,6 +19,16 @@ $string['cerrarsesion'] = 'Cerrar sesión SENCE';
 $string['cerrarsesion_help'] = 'Al terminar la clase o la jornada, debe <strong>cerrar la sesión SENCE</strong> con ClaveÚnica. Sin cierre, la asistencia puede quedar incompleta en SENCE.';
 $string['forzarcierre'] = 'Exigir inicio y cierre de sesión';
 $string['sesionmax'] = 'Duración máxima de sesión';
+$string['sesionmax_help'] = 'Tiempo máximo de la sesión SENCE en este curso (cronómetro). Si no se define, usa el valor por defecto del plugin.';
+$string['settingsheading_session'] = 'Sesión y alertas de cierre';
+$string['settingsheading_session_desc'] = 'Duración por defecto del cronómetro y correos automáticos cuando una sesión queda abierta o por vencer.';
+$string['defaultsencetimeout'] = 'Duración máxima de sesión (default)';
+$string['defaultsencetimeout_desc'] = 'Se usa si el bloque del curso no define su propia duración. Por defecto 3 horas.';
+$string['alertacierrecron'] = 'Enviar correos de alerta de cierre (tarea programada)';
+$string['alertacierrecron_desc'] = 'Cada 15 minutos revisa sesiones abiertas. Avisa al alumno (y a correos de alerta del bloque) cuando falte el margen configurado o ya haya vencido. El cierre real en SENCE sigue requiriendo ClaveÚnica.';
+$string['alertacierreminutos'] = 'Avisar cuando falten';
+$string['alertacierreminutos_desc'] = 'Margen antes del fin del cronómetro para enviar el correo de alerta (recomendado: 15 minutos).';
+$string['task_notify_open_sessions'] = 'SENCE: avisar sesiones abiertas / sin cierre';
 $string['lineasdecap'] = 'Línea de capacitación';
 $string['linea1'] = 'Programas Sociales o Becas (1)';
 $string['linea3'] = 'Franquicia Tributaria (3)';
@@ -98,6 +109,7 @@ $string['report_col_detail'] = 'Detalle';
 $string['report_no_access'] = 'Sin acceso';
 $string['report_error_code'] = 'Error {$a}';
 $string['report_status_ok'] = 'Asistencia OK';
+$string['report_status_open'] = 'Sesión abierta (sin cierre)';
 $string['report_status_error'] = 'Con error SENCE';
 $string['report_status_course_no_sence'] = 'En curso sin SENCE';
 $string['report_status_never'] = 'Sin ingreso';
@@ -106,6 +118,44 @@ $string['report_status_nogroup'] = 'Sin grupo SENCE';
 $string['report_tip_course_no_sence'] = 'Entró al curso Moodle pero no completó el inicio de sesión SENCE del bloque.';
 $string['report_tip_never'] = 'Aún no registra acceso al curso ni intento SENCE.';
 $string['report_tip_nogroup'] = 'Debe asignarse a un grupo SENCE-XXXXXXX (idnumber = ID acción).';
+$string['report_tip_open'] = 'Tiene sesión SENCE abierta. Tiempo restante local: {$a}. Debe entrar al curso y pulsar Cerrar sesión SENCE.';
+$string['reminder_close_button'] = 'Recordar cierre';
+$string['closealert_warn_subject'] = 'Alerta: cierre su sesión SENCE — {$a->shortname}';
+$string['closealert_warn_text'] = 'Hola {$a->fullname},
+
+Su sesión SENCE en {$a->coursename} ({$a->shortname}) está por vencer (restante: {$a->remaining}).
+
+Entre al curso y pulse Cerrar sesión SENCE (ClaveÚnica):
+{$a->courseurl}
+
+RUT: {$a->run}
+';
+$string['closealert_warn_html'] = '<p>Hola <strong>{$a->fullname}</strong>,</p><p>Su sesión SENCE en <strong>{$a->coursename}</strong> (<code>{$a->shortname}</code>) está por vencer (restante: {$a->remaining}).</p><p>Entre al curso y pulse <strong>Cerrar sesión SENCE</strong> (ClaveÚnica):</p><p><a href="{$a->courseurl}">{$a->courseurl}</a></p><p>RUT: {$a->run}</p>';
+$string['closealert_expired_subject'] = 'Urgente: sesión SENCE sin cerrar — {$a->shortname}';
+$string['closealert_expired_text'] = 'Hola {$a->fullname},
+
+Su sesión SENCE en {$a->coursename} ({$a->shortname}) venció y sigue abierta. Debe cerrarla con ClaveÚnica para completar la asistencia.
+
+Entre al curso ahora:
+{$a->courseurl}
+
+RUT: {$a->run}
+IdSesionSence: {$a->idsesionsence}
+';
+$string['closealert_expired_html'] = '<p>Hola <strong>{$a->fullname}</strong>,</p><p>Su sesión SENCE en <strong>{$a->coursename}</strong> (<code>{$a->shortname}</code>) <strong>venció y sigue abierta</strong>. Debe cerrarla con ClaveÚnica.</p><p>Entre al curso ahora:</p><p><a href="{$a->courseurl}">{$a->courseurl}</a></p><p>RUT: {$a->run}<br>IdSesionSence: {$a->idsesionsence}</p>';
+$string['closealert_remind_subject'] = 'Recordatorio: cierre su sesión SENCE — {$a->shortname}';
+$string['closealert_remind_text'] = 'Hola {$a->fullname},
+
+Le recordamos cerrar su sesión SENCE en:
+{$a->coursename} ({$a->shortname})
+
+{$a->courseurl}
+
+Use el botón Cerrar sesión SENCE con ClaveÚnica.
+Grupo(s): {$a->groups}
+RUT: {$a->run}
+';
+$string['closealert_remind_html'] = '<p>Hola <strong>{$a->fullname}</strong>,</p><p>Le recordamos <strong>cerrar su sesión SENCE</strong> en:</p><p><strong>{$a->coursename}</strong> (<code>{$a->shortname}</code>)</p><p><a href="{$a->courseurl}">{$a->courseurl}</a></p><p>Use el botón <strong>Cerrar sesión SENCE</strong> con ClaveÚnica.</p><ul><li>Grupo(s): {$a->groups}</li><li>RUT: {$a->run}</li></ul>';
 $string['reminder_button'] = 'Enviar recordatorio ({$a})';
 $string['reminder_button_help'] = 'Envía un correo a quienes aún no marcaron asistencia SENCE.';
 $string['reminder_help'] = 'Use <strong>Recordar</strong> en cada fila pendiente. El correo va al participante; la <strong>copia (CC)</strong> a los correos configurados en el bloque; usted recibe <strong>copia oculta (BCC)</strong>. No aplica a asistencia OK ni becarios.';

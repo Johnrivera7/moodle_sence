@@ -14,6 +14,7 @@ class report_builder {
 
     /** Estados del reporte. */
     public const STATUS_OK = 'ok';
+    public const STATUS_OPEN = 'open';
     public const STATUS_ERROR = 'error';
     public const STATUS_COURSE_NO_SENCE = 'course_no_sence';
     public const STATUS_NEVER = 'never';
@@ -31,6 +32,7 @@ class report_builder {
             self::STATUS_COURSE_NO_SENCE,
             self::STATUS_ERROR,
             self::STATUS_NOGROUP,
+            self::STATUS_OPEN,
         ];
     }
 
@@ -98,6 +100,11 @@ class report_builder {
         $subject = get_string('reminder_subject', 'block_moodle_sence', $a);
         $bodytext = get_string('reminder_body_text', 'block_moodle_sence', $a);
         $bodyhtml = get_string('reminder_body_html', 'block_moodle_sence', $a);
+        if ($row->status === self::STATUS_OPEN) {
+            $subject = get_string('closealert_remind_subject', 'block_moodle_sence', $a);
+            $bodytext = get_string('closealert_remind_text', 'block_moodle_sence', $a);
+            $bodyhtml = get_string('closealert_remind_html', 'block_moodle_sence', $a);
+        }
 
         $ok = \block_moodle_sence_email_reminder(
             $user,
@@ -149,6 +156,7 @@ class report_builder {
 
         $summary = [
             self::STATUS_OK => 0,
+            self::STATUS_OPEN => 0,
             self::STATUS_ERROR => 0,
             self::STATUS_COURSE_NO_SENCE => 0,
             self::STATUS_NEVER => 0,
@@ -158,6 +166,7 @@ class report_builder {
         ];
 
         $rows = [];
+        $timeout = \block_moodle_sence_resolve_session_timeout($config);
         foreach ($users as $user) {
             // Omitir docentes/gestores del listado de participantes SENCE.
             if (has_capability('moodle/course:viewhiddenactivities', $context, $user)) {
@@ -178,6 +187,7 @@ class report_builder {
 
             $sence = self::find_sence_for_user($sencebyrun, $run, $codes);
             $hassuccess = ($sence !== null);
+            $isopen = ($sence && !empty($sence->idsesionsence));
             $lasterror = $errors[(int) $user->id] ?? null;
 
             if ($becado) {
@@ -187,6 +197,8 @@ class report_builder {
                     || (int) ($config->lineasdecap ?? 3) !== 1)
                 && ($codes['idaccion'] === '' || $codes['codigocurso'] === '')) {
                 $status = self::STATUS_NOGROUP;
+            } else if ($isopen) {
+                $status = self::STATUS_OPEN;
             } else if ($hassuccess) {
                 $status = self::STATUS_OK;
             } else if ($lasterror) {
@@ -201,6 +213,10 @@ class report_builder {
             $summary['total']++;
 
             $glosa = $lasterror ? (int) $lasterror->glosa : 0;
+            $remaining = ($isopen && $sence)
+                ? \block_moodle_sence\session_manager::seconds_remaining($sence, $timeout)
+                : 0;
+
             $rows[] = (object) [
                 'userid' => (int) $user->id,
                 'fullname' => fullname($user),
@@ -216,6 +232,7 @@ class report_builder {
                 'timeaccess' => $timeaccess,
                 'sencetime' => $sence ? (int) $sence->firstacess : 0,
                 'idsesionsence' => $sence->idsesionsence ?? '',
+                'remaining' => $remaining,
                 'errorglosa' => $glosa,
                 'errortext' => $glosa ? \block_moodle_sence_glosa_message($glosa) : '',
                 'errortip' => $glosa ? \block_moodle_sence_glosa_tip($glosa) : '',
@@ -262,18 +279,24 @@ class report_builder {
         }
         $codcurso = (string) ($codes['codigocurso'] ?? '');
         $idaccion = (string) ($codes['idaccion'] ?? '');
+        $fallback = null;
         foreach ($sencebyrun[$body] as $rec) {
-            if ($codcurso !== '' && (string) $rec->codcurso === $codcurso && !empty($rec->idsesionsence)) {
-                return $rec;
-            }
-            // Historial: sesión cerrada (idsesionsence vacío) pero sí hubo registro.
+            $match = false;
             if ($codcurso !== '' && (string) $rec->codcurso === $codcurso) {
+                $match = true;
+            } else if ($idaccion !== '' && (string) $rec->idaccion === $idaccion) {
+                $match = true;
+            }
+            if (!$match) {
+                continue;
+            }
+            if (!empty($rec->idsesionsence)) {
                 return $rec;
             }
-            if ($idaccion !== '' && (string) $rec->idaccion === $idaccion) {
-                return $rec;
+            if ($fallback === null) {
+                $fallback = $rec;
             }
         }
-        return null;
+        return $fallback;
     }
 }

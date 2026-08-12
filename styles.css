@@ -391,9 +391,12 @@ html[data-bs-theme="dark"] .block-moodle-sence-gate {
     margin-top: 0.25rem;
 }
 
-.block-moodle-sence-report__card--ok .block-moodle-sence-report__count { color: var(--bms-ok); }
-.block-moodle-sence-report__card--error .block-moodle-sence-report__count { color: var(--bms-danger); }
-.block-moodle-sence-report__card--course_no_sence .block-moodle-sence-report__count { color: var(--bms-warn); }
+.block-moodle-sence-report__card--open .block-moodle-sence-report__count { color: var(--bms-warn); }
+
+.block-moodle-sence-report__badge--open {
+    background: color-mix(in srgb, var(--bms-warn) 18%, white);
+    color: var(--bms-warn);
+}
 
 .block-moodle-sence-report__toolbar {
     display: flex;

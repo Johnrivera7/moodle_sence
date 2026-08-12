@@ -38,10 +38,12 @@ class block_moodle_sence_edit_form extends block_edit_form {
         $mform->setDefault('config_forzarcierre', 1);
 
         $mform->addElement('duration', 'config_sencetimeout', get_string('sesionmax', 'block_moodle_sence'));
-        $mform->setDefault('config_sencetimeout', 10800);
+        $mform->setDefault('config_sencetimeout', (int) (get_config('block_moodle_sence', 'defaultsencetimeout') ?: 10800));
+        $mform->addHelpButton('config_sencetimeout', 'sesionmax', 'block_moodle_sence');
 
         $mform->addElement('textarea', 'config_alertafinal', get_string('alertafinal', 'block_moodle_sence'), 'wrap="virtual" rows="3" cols="50"');
         $mform->setDefault('config_alertafinal', get_string('defaultalert', 'block_moodle_sence'));
         $mform->setType('config_alertafinal', PARAM_TEXT);
+        $mform->addHelpButton('config_alertafinal', 'alertafinal', 'block_moodle_sence');
     }
 }

@@ -9,6 +9,7 @@ $string['codigocurso_help'] = 'Format: CodSence/CodigoCurso (e.g. 1234567890/MY-
 $string['codigocurso_invalid'] = 'Course SENCE code must be 10 digits, CodSence/CodigoCurso, or MULTIPLES.';
 $string['grupobecas'] = 'Scholarship groups (comma separated)';
 $string['alertafinal'] = 'Final session alert message';
+$string['alertafinal_help'] = 'On-screen banner/alert text when 15 minutes of SENCE session remain.';
 $string['correoalerta'] = 'Error alert emails';
 $string['correoalerta_help'] = 'One or more emails separated by comma, semicolon or space. Example: support@otec.cl, coordinator@otec.cl';
 $string['correorecordatorio'] = 'Reminder CC emails';
@@ -18,6 +19,16 @@ $string['cerrarsesion'] = 'End SENCE session';
 $string['cerrarsesion_help'] = 'When you finish the class or study period, you must <strong>end the SENCE session</strong> with ClaveÚnica. Without logout, attendance may remain incomplete in SENCE.';
 $string['forzarcierre'] = 'Require login and logout';
 $string['sesionmax'] = 'Maximum session duration';
+$string['sesionmax_help'] = 'Maximum SENCE session length for this course (timer). If empty, uses the plugin default.';
+$string['settingsheading_session'] = 'Session and close alerts';
+$string['settingsheading_session_desc'] = 'Default timer duration and automatic emails when a session is open or about to expire.';
+$string['defaultsencetimeout'] = 'Maximum session duration (default)';
+$string['defaultsencetimeout_desc'] = 'Used when the course block does not set its own duration. Default 3 hours.';
+$string['alertacierrecron'] = 'Send close-alert emails (scheduled task)';
+$string['alertacierrecron_desc'] = 'Every 15 minutes checks open sessions. Emails the learner (and block alert emails) when within the configured margin or already expired. Actual SENCE logout still requires ClaveÚnica.';
+$string['alertacierreminutos'] = 'Warn when remaining';
+$string['alertacierreminutos_desc'] = 'Lead time before timer end to send the alert email (recommended: 15 minutes).';
+$string['task_notify_open_sessions'] = 'SENCE: notify open / unclosed sessions';
 $string['lineasdecap'] = 'Training line';
 $string['linea1'] = 'Social programs (1)';
 $string['linea3'] = 'Tax franchise (3)';
@@ -98,6 +109,7 @@ $string['report_col_detail'] = 'Detail';
 $string['report_no_access'] = 'No access';
 $string['report_error_code'] = 'Error {$a}';
 $string['report_status_ok'] = 'Attendance OK';
+$string['report_status_open'] = 'Open session (not closed)';
 $string['report_status_error'] = 'SENCE error';
 $string['report_status_course_no_sence'] = 'Course without SENCE';
 $string['report_status_never'] = 'No access yet';
@@ -106,6 +118,44 @@ $string['report_status_nogroup'] = 'No SENCE group';
 $string['report_tip_course_no_sence'] = 'Entered the Moodle course but did not complete the SENCE block login.';
 $string['report_tip_never'] = 'No course access and no SENCE attempt yet.';
 $string['report_tip_nogroup'] = 'Must be assigned to a SENCE-XXXXXXX group (idnumber = action ID).';
+$string['report_tip_open'] = 'Has an open SENCE session. Local remaining time: {$a}. Must open the course and click End SENCE session.';
+$string['reminder_close_button'] = 'Remind to close';
+$string['closealert_warn_subject'] = 'Alert: end your SENCE session — {$a->shortname}';
+$string['closealert_warn_text'] = 'Hello {$a->fullname},
+
+Your SENCE session in {$a->coursename} ({$a->shortname}) is about to expire (remaining: {$a->remaining}).
+
+Open the course and click End SENCE session (ClaveÚnica):
+{$a->courseurl}
+
+RUT: {$a->run}
+';
+$string['closealert_warn_html'] = '<p>Hello <strong>{$a->fullname}</strong>,</p><p>Your SENCE session in <strong>{$a->coursename}</strong> (<code>{$a->shortname}</code>) is about to expire (remaining: {$a->remaining}).</p><p>Open the course and click <strong>End SENCE session</strong> (ClaveÚnica):</p><p><a href="{$a->courseurl}">{$a->courseurl}</a></p><p>RUT: {$a->run}</p>';
+$string['closealert_expired_subject'] = 'Urgent: SENCE session still open — {$a->shortname}';
+$string['closealert_expired_text'] = 'Hello {$a->fullname},
+
+Your SENCE session in {$a->coursename} ({$a->shortname}) expired and is still open. Please close it with ClaveÚnica.
+
+Open the course now:
+{$a->courseurl}
+
+RUT: {$a->run}
+IdSesionSence: {$a->idsesionsence}
+';
+$string['closealert_expired_html'] = '<p>Hello <strong>{$a->fullname}</strong>,</p><p>Your SENCE session in <strong>{$a->coursename}</strong> (<code>{$a->shortname}</code>) <strong>expired and is still open</strong>. Please close it with ClaveÚnica.</p><p>Open the course now:</p><p><a href="{$a->courseurl}">{$a->courseurl}</a></p><p>RUT: {$a->run}<br>IdSesionSence: {$a->idsesionsence}</p>';
+$string['closealert_remind_subject'] = 'Reminder: end your SENCE session — {$a->shortname}';
+$string['closealert_remind_text'] = 'Hello {$a->fullname},
+
+Please end your SENCE session in:
+{$a->coursename} ({$a->shortname})
+
+{$a->courseurl}
+
+Use End SENCE session with ClaveÚnica.
+Group(s): {$a->groups}
+RUT: {$a->run}
+';
+$string['closealert_remind_html'] = '<p>Hello <strong>{$a->fullname}</strong>,</p><p>Please <strong>end your SENCE session</strong> in:</p><p><strong>{$a->coursename}</strong> (<code>{$a->shortname}</code>)</p><p><a href="{$a->courseurl}">{$a->courseurl}</a></p><p>Use <strong>End SENCE session</strong> with ClaveÚnica.</p><ul><li>Group(s): {$a->groups}</li><li>RUT: {$a->run}</li></ul>';
 $string['reminder_button'] = 'Send reminder ({$a})';
 $string['reminder_button_help'] = 'Emails participants who have not recorded SENCE attendance yet.';
 $string['reminder_help'] = 'Use <strong>Remind</strong> on each pending row. The email goes to the participant; <strong>CC</strong> goes to block-configured addresses; you get a <strong>BCC</strong>. Not used for OK attendance or scholarship users.';

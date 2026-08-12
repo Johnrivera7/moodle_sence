@@ -24,6 +24,7 @@ function xmldb_block_moodle_sence_ensure_schema(): void {
         $table->add_field('idsesionalumno', XMLDB_TYPE_CHAR, '100', null, null, null, null);
         $table->add_field('idsesionsence', XMLDB_TYPE_CHAR, '100', null, null, null, null);
         $table->add_field('firstacess', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('closealertsent', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
         $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
         $dbman->create_table($table);
         return;
@@ -35,6 +36,7 @@ function xmldb_block_moodle_sence_ensure_schema(): void {
         ['idsesionalumno', XMLDB_TYPE_CHAR, '100', 'idaccion'],
         ['idsesionsence', XMLDB_TYPE_CHAR, '100', 'idsesionalumno'],
         ['firstacess', XMLDB_TYPE_INTEGER, '10', 'idsesionsence'],
+        ['closealertsent', XMLDB_TYPE_INTEGER, '10', 'firstacess'],
     ];
     foreach ($fields as $f) {
         $field = new xmldb_field($f[0], $f[1], $f[2], null, null, null, null, $f[3]);

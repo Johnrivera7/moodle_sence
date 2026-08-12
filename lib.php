@@ -484,6 +484,60 @@ function block_moodle_sence_apply_testmode_codes(string $codsence, string $codig
 }
 
 /**
+ * Parsea IdSesionAlumno MOODLE-{courseid}-{userid}-{ts}.
+ *
+ * @param string $idsesionalumno
+ * @return array{courseid:int,userid:int}|null
+ */
+function block_moodle_sence_parse_session_alumno(string $idsesionalumno): ?array {
+    if (!preg_match('/^MOODLE-(\d+)-(\d+)-\d+$/', trim($idsesionalumno), $m)) {
+        return null;
+    }
+    return [
+        'courseid' => (int) $m[1],
+        'userid' => (int) $m[2],
+    ];
+}
+
+/**
+ * Config del bloque moodle_sence en un curso (primera instancia).
+ *
+ * @param int $courseid
+ * @return \stdClass|null
+ */
+function block_moodle_sence_get_course_block_config(int $courseid): ?\stdClass {
+    global $DB;
+
+    $context = context_course::instance($courseid, IGNORE_MISSING);
+    if (!$context) {
+        return null;
+    }
+    $instance = $DB->get_record('block_instances', [
+        'blockname' => 'moodle_sence',
+        'parentcontextid' => $context->id,
+    ], '*', IGNORE_MISSING);
+    if (!$instance) {
+        return null;
+    }
+    $block = block_instance('moodle_sence', $instance);
+    return $block->config ?? new stdClass();
+}
+
+/**
+ * Duración máxima de sesión: bloque, o default del plugin (10800).
+ *
+ * @param \stdClass|null $config
+ * @return int
+ */
+function block_moodle_sence_resolve_session_timeout(?\stdClass $config): int {
+    if ($config && isset($config->sencetimeout) && (int) $config->sencetimeout > 0) {
+        return (int) $config->sencetimeout;
+    }
+    $global = (int) get_config('block_moodle_sence', 'defaultsencetimeout');
+    return $global > 0 ? $global : 10800;
+}
+
+/**
  * Parsea correos de alerta (coma, punto y coma o salto de línea).
  *
  * @param string $raw

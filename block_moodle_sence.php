@@ -94,7 +94,7 @@ class block_moodle_sence extends block_base {
         $codes = block_moodle_sence_resolve_runtime_codes($config, $COURSE->id, $USER->id);
         $session = session_manager::get_open_session($run, $codes['codigocurso']);
         $urls = block_moodle_sence_get_rce_urls();
-        $maxseconds = (int) ($config->sencetimeout ?? 10800);
+        $maxseconds = block_moodle_sence_resolve_session_timeout($config);
         $forcer = !empty($config->forzarcierre);
         $prior = block_moodle_sence_has_prior_registration($run, $codes['codigocurso'], $codes['idaccion']);
 
