@@ -105,7 +105,7 @@ class block_moodle_sence extends block_base {
         }
 
         // forzarcierre=0 y ya registró: permitir curso sin gate.
-        if (!$forcer && $prior > 0 && !($session && !empty($session->idsesionsence))) {
+        if (!$forcer && $prior > 0 && !($session && session_manager::is_open_record($session))) {
             $out .= html_writer::div(
                 html_writer::tag('p', get_string('alreadyregistered_title', 'block_moodle_sence'), ['class' => 'block-moodle-sence__title']) .
                 html_writer::tag('p', get_string('alreadyregistered', 'block_moodle_sence'), ['class' => 'block-moodle-sence__text']),
@@ -117,7 +117,7 @@ class block_moodle_sence extends block_base {
             return $this->content;
         }
 
-        if ($session && !empty($session->idsesionsence)) {
+        if ($session && session_manager::is_open_record($session)) {
             $remaining = session_manager::seconds_remaining($session, $maxseconds);
             $expired = ($remaining <= 0);
             $alertmsg = !empty($config->alertafinal)

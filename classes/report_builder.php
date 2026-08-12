@@ -187,7 +187,7 @@ class report_builder {
 
             $sence = self::find_sence_for_user($sencebyrun, $run, $codes);
             $hassuccess = ($sence !== null);
-            $isopen = ($sence && !empty($sence->idsesionsence));
+            $isopen = ($sence && session_manager::is_open_record($sence));
             $lasterror = $errors[(int) $user->id] ?? null;
 
             if ($becado) {
@@ -231,6 +231,7 @@ class report_builder {
                 'courseaccessed' => $courseaccessed,
                 'timeaccess' => $timeaccess,
                 'sencetime' => $sence ? (int) $sence->firstacess : 0,
+                'senceend' => ($sence && !empty($sence->timeend)) ? (int) $sence->timeend : 0,
                 'idsesionsence' => $sence->idsesionsence ?? '',
                 'remaining' => $remaining,
                 'errorglosa' => $glosa,
@@ -290,7 +291,7 @@ class report_builder {
             if (!$match) {
                 continue;
             }
-            if (!empty($rec->idsesionsence)) {
+            if (session_manager::is_open_record($rec)) {
                 return $rec;
             }
             if ($fallback === null) {
@@ -298,5 +299,98 @@ class report_builder {
             }
         }
         return $fallback;
+    }
+
+    /**
+     * Historial de sesiones SENCE del curso agrupado por día (zona horaria del usuario).
+     *
+     * @param int $courseid
+     * @param string $daykey YYYY-MM-DD o vacío = todos
+     * @return array{days:array,daykeys:string[],totals:array,pending:int}
+     */
+    public static function build_daily(int $courseid, string $daykey = ''): array {
+        global $DB, $CFG;
+
+        require_once($CFG->dirroot . '/blocks/moodle_sence/lib.php');
+
+        $all = $DB->get_records('block_sence', null, 'firstacess DESC');
+        $days = [];
+        $totals = ['sessions' => 0, 'open' => 0, 'closed' => 0, 'unknown' => 0];
+
+        foreach ($all as $rec) {
+            $parsed = \block_moodle_sence_parse_session_alumno((string) ($rec->idsesionalumno ?? ''));
+            if (!$parsed || (int) $parsed['courseid'] !== $courseid) {
+                continue;
+            }
+
+            $start = (int) ($rec->firstacess ?? 0);
+            if ($start <= 0) {
+                continue;
+            }
+
+            $dkey = userdate($start, '%Y-%m-%d');
+            if ($daykey !== '' && $dkey !== $daykey) {
+                continue;
+            }
+
+            $userid = (int) $parsed['userid'];
+            $user = \core_user::get_user($userid, '*', IGNORE_MISSING);
+            $isopen = session_manager::is_open_record($rec);
+            $timeend = isset($rec->timeend) ? (int) $rec->timeend : 0;
+
+            if ($isopen) {
+                $sessstatus = 'open';
+                $totals['open']++;
+            } else if ($timeend > 0) {
+                $sessstatus = 'closed';
+                $totals['closed']++;
+            } else {
+                // Cierre antiguo: se limpió IdSesionSence sin guardar hora.
+                $sessstatus = 'unknown';
+                $totals['unknown']++;
+            }
+            $totals['sessions']++;
+
+            if (!isset($days[$dkey])) {
+                $days[$dkey] = (object) [
+                    'daykey' => $dkey,
+                    'label' => userdate($start, get_string('strftimedaydate', 'langconfig')),
+                    'sessions' => [],
+                    'open' => 0,
+                    'closed' => 0,
+                    'unknown' => 0,
+                ];
+            }
+
+            $days[$dkey]->{$sessstatus}++;
+            $days[$dkey]->sessions[] = (object) [
+                'id' => (int) $rec->id,
+                'userid' => $userid,
+                'fullname' => $user ? fullname($user) : get_string('daily_unknown_user', 'block_moodle_sence'),
+                'email' => $user->email ?? '',
+                'run' => rut_helper::format_run((string) $rec->runalumno),
+                'codcurso' => (string) ($rec->codcurso ?? ''),
+                'idaccion' => (string) ($rec->idaccion ?? ''),
+                'timestart' => $start,
+                'timeend' => $timeend,
+                'status' => $sessstatus,
+                'statuslabel' => get_string('daily_status_' . $sessstatus, 'block_moodle_sence'),
+                'idsesionsence' => (string) ($rec->idsesionsence ?? ''),
+                'duration' => ($timeend > $start) ? ($timeend - $start) : 0,
+                'profileurl' => (new \moodle_url('/user/view.php', [
+                    'id' => $userid,
+                    'course' => $courseid,
+                ]))->out(false),
+            ];
+        }
+
+        krsort($days);
+
+        return [
+            'days' => $days,
+            'daykeys' => array_keys($days),
+            'totals' => $totals,
+            'pending' => $totals['open'],
+        ];
     }
 }

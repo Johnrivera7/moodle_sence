@@ -582,3 +582,64 @@ html[data-bs-theme="dark"] .block-moodle-sence-gate {
     pointer-events: none;
     cursor: not-allowed;
 }
+
+.block-moodle-sence-report__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--bms-border);
+}
+
+.block-moodle-sence-report__tab {
+    display: inline-block;
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    color: var(--bms-navy);
+    background: var(--bms-surface-soft);
+    border: 1px solid transparent;
+}
+
+.block-moodle-sence-report__tab:hover {
+    border-color: var(--bms-blue);
+    text-decoration: none;
+}
+
+.block-moodle-sence-report__tab.is-active {
+    background: var(--bms-navy);
+    color: #fff;
+}
+
+.block-moodle-sence-report__day {
+    margin: 0 0 1.75rem;
+}
+
+.block-moodle-sence-report__day-title {
+    margin: 0 0 0.65rem;
+    font-size: 1.1rem;
+    color: var(--bms-navy);
+    font-weight: 700;
+}
+
+.block-moodle-sence-report__pending {
+    color: var(--bms-warn);
+    font-weight: 600;
+}
+
+.block-moodle-sence-report__badge--daily-open {
+    background: color-mix(in srgb, var(--bms-warn) 18%, #fff);
+    color: var(--bms-warn);
+}
+
+.block-moodle-sence-report__badge--daily-closed {
+    background: color-mix(in srgb, var(--bms-ok) 18%, #fff);
+    color: var(--bms-ok);
+}
+
+.block-moodle-sence-report__badge--daily-unknown {
+    background: color-mix(in srgb, var(--bms-muted) 16%, #fff);
+    color: var(--bms-muted);
+}

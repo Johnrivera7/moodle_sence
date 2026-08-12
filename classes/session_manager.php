@@ -44,6 +44,20 @@ class session_manager {
     }
 
     /**
+     * Sesión abierta: tiene IdSesionSence y aún no tiene timeend.
+     *
+     * @param \stdClass $rec
+     * @return bool
+     */
+    public static function is_open_record(\stdClass $rec): bool {
+        if (empty($rec->idsesionsence)) {
+            return false;
+        }
+        $ended = isset($rec->timeend) ? (int) $rec->timeend : 0;
+        return $ended <= 0;
+    }
+
+    /**
      * Busca sesión abierta por RUT sin guión y, si no hay, con guión.
      *
      * @param string $runformatted
@@ -61,9 +75,9 @@ class session_manager {
             $records = $DB->get_records('block_sence', [
                 'runalumno' => $run,
                 'codcurso' => $codcurso,
-            ], 'firstacess DESC', '*', 0, 5);
+            ], 'firstacess DESC', '*', 0, 10);
             foreach ($records as $rec) {
-                if (!empty($rec->idsesionsence)) {
+                if (self::is_open_record($rec)) {
                     return $rec;
                 }
             }
@@ -86,25 +100,41 @@ class session_manager {
         $rec->idsesionalumno = $data->idsesionalumno;
         $rec->idsesionsence = $data->idsesionsence;
         $rec->firstacess = time();
+        if ($DB->get_manager()->field_exists('block_sence', 'timeend')) {
+            $rec->timeend = 0;
+        }
         return (int) $DB->insert_record('block_sence', $rec);
     }
 
     /**
+     * Cierra sesión conservando IdSesionSence para historial y registra timeend.
+     *
      * @param int $recordid
      */
     public static function close_session(int $recordid): void {
         global $DB;
-        $DB->set_field('block_sence', 'idsesionsence', '', $recordid);
+        $rec = $DB->get_record('block_sence', ['id' => $recordid], '*', IGNORE_MISSING);
+        if (!$rec) {
+            return;
+        }
+        $update = (object) ['id' => $recordid];
+        if ($DB->get_manager()->field_exists('block_sence', 'timeend')) {
+            $update->timeend = time();
+            // Conserva idsesionsence para el historial; la apertura se detecta con timeend=0.
+        } else {
+            // Compatibilidad instalaciones sin timeend.
+            $update->idsesionsence = '';
+        }
+        $DB->update_record('block_sence', $update);
     }
 
     /**
-     * Cierre de sesión exitoso (POST retorno sin IdSesionSence).
+     * Cierre de sesión exitoso (POST retorno sin IdSesionSence o con cierre).
      *
      * @param array $post
      * @param \stdClass $user
      */
     public static function close_session_by_post(array $post, \stdClass $user): void {
-        global $DB;
         $idsesion = $post['IdSesionAlumno'] ?? '';
         $runraw = $post['RunAlumno'] ?? '';
         if ($runraw === '') {
@@ -114,9 +144,12 @@ class session_manager {
         $runwith = rut_helper::format_run($runraw);
 
         if ($idsesion !== '') {
+            global $DB;
             foreach (array_unique([$runbody, $runwith]) as $run) {
                 if ($rec = $DB->get_record('block_sence', ['idsesionalumno' => $idsesion, 'runalumno' => $run])) {
-                    self::close_session((int) $rec->id);
+                    if (self::is_open_record($rec) || empty($rec->timeend)) {
+                        self::close_session((int) $rec->id);
+                    }
                     return;
                 }
             }
@@ -137,7 +170,7 @@ class session_manager {
      * @return int seconds remaining
      */
     public static function seconds_remaining(\stdClass $record, int $maxseconds): int {
-        if (empty($record->firstacess) || empty($record->idsesionsence)) {
+        if (empty($record->firstacess) || !self::is_open_record($record)) {
             return 0;
         }
         $end = (int) $record->firstacess + $maxseconds;

@@ -8,11 +8,20 @@ global $DB, $PAGE, $OUTPUT, $USER;
 
 $courseid = required_param('courseid', PARAM_INT);
 $instanceid = required_param('instanceid', PARAM_INT);
+$view = optional_param('view', 'participants', PARAM_ALPHANUMEXT);
+if ($view !== 'daily') {
+    $view = 'participants';
+}
 $filter = optional_param('status', 'all', PARAM_ALPHANUMEXT);
+$day = optional_param('day', '', PARAM_TEXT);
 $download = optional_param('download', 0, PARAM_BOOL);
 $action = optional_param('action', '', PARAM_ALPHANUMEXT);
 $userid = optional_param('userid', 0, PARAM_INT);
 $confirm = optional_param('confirm', 0, PARAM_BOOL);
+
+if ($day !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $day)) {
+    $day = '';
+}
 
 $course = get_course($courseid);
 $context = context_course::instance($courseid);
@@ -32,6 +41,14 @@ $reporturl = new moodle_url('/blocks/moodle_sence/report.php', [
 ]);
 $courseurl = new moodle_url('/course/view.php', ['id' => $courseid]);
 
+$baseparams = ['view' => $view];
+if ($view === 'daily' && $day !== '') {
+    $baseparams['day'] = $day;
+}
+if ($view === 'participants' && $filter !== 'all') {
+    $baseparams['status'] = $filter;
+}
+
 $data = report_builder::build($courseid, $config);
 $allrows = $data['rows'];
 $summary = $data['summary'];
@@ -47,49 +64,86 @@ if ($filter !== 'all') {
     }));
 }
 
+$daily = null;
+if ($view === 'daily' || ($download && optional_param('view', '', PARAM_ALPHANUMEXT) === 'daily')) {
+    $daily = report_builder::build_daily($courseid, $day);
+}
+
 if ($download) {
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="sence-reporte-curso-' . $courseid . '.csv"');
+    $filename = ($view === 'daily')
+        ? 'sence-por-dia-curso-' . $courseid . '.csv'
+        : 'sence-reporte-curso-' . $courseid . '.csv';
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
     $out = fopen('php://output', 'w');
     fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
-    fputcsv($out, [
-        'Nombre', 'Email', 'RUT', 'Grupos', 'CodSence', 'CodigoCurso', 'ID Accion',
-        'Estado', 'Acceso curso', 'Fecha acceso curso', 'Fecha SENCE', 'IdSesionSence',
-        'Error glosa', 'Detalle error',
-    ]);
-    foreach ($rows as $r) {
+
+    if ($view === 'daily') {
+        if ($daily === null) {
+            $daily = report_builder::build_daily($courseid, $day);
+        }
         fputcsv($out, [
-            $r->fullname,
-            $r->email,
-            $r->run,
-            $r->groups,
-            $r->codsence,
-            $r->codigocurso,
-            $r->idaccion,
-            $r->statuslabel,
-            $r->courseaccessed ? 'si' : 'no',
-            $r->timeaccess ? userdate($r->timeaccess) : '',
-            $r->sencetime ? userdate($r->sencetime) : '',
-            $r->idsesionsence,
-            $r->errorglosa ?: '',
-            $r->errortext,
+            'Dia', 'Nombre', 'Email', 'RUT', 'CodigoCurso', 'ID Accion',
+            'Inicio', 'Cierre', 'Estado', 'Duracion (seg)', 'IdSesionSence',
         ]);
+        foreach ($daily['days'] as $dayblock) {
+            foreach ($dayblock->sessions as $s) {
+                fputcsv($out, [
+                    $dayblock->daykey,
+                    $s->fullname,
+                    $s->email,
+                    $s->run,
+                    $s->codcurso,
+                    $s->idaccion,
+                    userdate($s->timestart),
+                    $s->timeend > 0 ? userdate($s->timeend) : '',
+                    $s->statuslabel,
+                    $s->duration > 0 ? $s->duration : '',
+                    $s->idsesionsence,
+                ]);
+            }
+        }
+    } else {
+        fputcsv($out, [
+            'Nombre', 'Email', 'RUT', 'Grupos', 'CodSence', 'CodigoCurso', 'ID Accion',
+            'Estado', 'Acceso curso', 'Fecha acceso curso', 'Fecha SENCE', 'IdSesionSence',
+            'Error glosa', 'Detalle error',
+        ]);
+        foreach ($rows as $r) {
+            fputcsv($out, [
+                $r->fullname,
+                $r->email,
+                $r->run,
+                $r->groups,
+                $r->codsence,
+                $r->codigocurso,
+                $r->idaccion,
+                $r->statuslabel,
+                $r->courseaccessed ? 'si' : 'no',
+                $r->timeaccess ? userdate($r->timeaccess) : '',
+                $r->sencetime ? userdate($r->sencetime) : '',
+                $r->idsesionsence,
+                $r->errorglosa ?: '',
+                $r->errortext,
+            ]);
+        }
     }
     fclose($out);
     exit;
 }
 
-$PAGE->set_url($reporturl, $filter !== 'all' ? ['status' => $filter] : []);
+$pageparams = $baseparams;
+$PAGE->set_url($reporturl, $pageparams);
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('report');
 $PAGE->set_title(get_string('report_title', 'block_moodle_sence'));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->requires->css('/blocks/moodle_sence/styles.css');
 
-$backparams = $filter !== 'all' ? ['status' => $filter] : [];
+$backparams = $baseparams;
 $backurl = new moodle_url($reporturl, $backparams);
 
-// Recordatorio por usuario + CC al emisor.
+// Recordatorio por usuario + CC al emisor (solo vista participantes).
 if ($action === 'remind') {
     require_sesskey();
     if ($userid <= 0 || empty($rowsbyid[$userid])) {
@@ -116,13 +170,12 @@ if ($action === 'remind') {
                 ? implode(', ', block_moodle_sence_parse_alert_emails((string) $config->correorecordatorio))
                 : get_string('reminder_cc_none', 'block_moodle_sence'),
         ]);
-        $yesurl = new moodle_url($reporturl, [
-            'status' => $filter,
+        $yesurl = new moodle_url($reporturl, array_merge($backparams, [
             'action' => 'remind',
             'userid' => $userid,
             'confirm' => 1,
             'sesskey' => sesskey(),
-        ]);
+        ]));
         echo $OUTPUT->confirm($msg, $yesurl, $backurl);
         echo $OUTPUT->footer();
         exit;
@@ -156,6 +209,155 @@ echo html_writer::tag('p', get_string('report_intro', 'block_moodle_sence', (obj
     'url' => $courseurl->out(false),
 ]));
 
+// Pestañas participantes / por día.
+echo html_writer::start_div('block-moodle-sence-report__tabs');
+$tabparts = new moodle_url($reporturl, ['view' => 'participants']);
+$tabdaily = new moodle_url($reporturl, ['view' => 'daily']);
+echo html_writer::link(
+    $tabparts,
+    get_string('report_view_participants', 'block_moodle_sence'),
+    ['class' => 'block-moodle-sence-report__tab' . ($view === 'participants' ? ' is-active' : '')]
+);
+echo html_writer::link(
+    $tabdaily,
+    get_string('report_view_daily', 'block_moodle_sence'),
+    ['class' => 'block-moodle-sence-report__tab' . ($view === 'daily' ? ' is-active' : '')]
+);
+echo html_writer::end_div();
+
+if ($view === 'daily') {
+    if ($daily === null) {
+        $daily = report_builder::build_daily($courseid, $day);
+    }
+
+    echo html_writer::tag('p', get_string('daily_intro', 'block_moodle_sence'), [
+        'class' => 'block-moodle-sence-report__hint',
+    ]);
+
+    echo html_writer::start_div('block-moodle-sence-report__summary');
+    $dailycards = [
+        'sessions' => get_string('daily_total_sessions', 'block_moodle_sence'),
+        'open' => get_string('daily_status_open', 'block_moodle_sence'),
+        'closed' => get_string('daily_status_closed', 'block_moodle_sence'),
+        'unknown' => get_string('daily_status_unknown', 'block_moodle_sence'),
+    ];
+    foreach ($dailycards as $key => $label) {
+        $css = ($key === 'open') ? 'open' : (($key === 'closed') ? 'ok' : (($key === 'unknown') ? 'never' : 'becado'));
+        echo html_writer::div(
+            html_writer::span((string) ($daily['totals'][$key] ?? 0), 'block-moodle-sence-report__count') .
+            html_writer::span($label, 'block-moodle-sence-report__label'),
+            'block-moodle-sence-report__card block-moodle-sence-report__card--' . $css
+        );
+    }
+    echo html_writer::end_div();
+
+    echo html_writer::start_div('block-moodle-sence-report__toolbar');
+    echo html_writer::start_tag('nav', ['class' => 'block-moodle-sence-report__filters', 'aria-label' => 'Días']);
+    $alldaysurl = new moodle_url($reporturl, ['view' => 'daily']);
+    echo html_writer::link(
+        $alldaysurl,
+        get_string('daily_filter_all', 'block_moodle_sence') . ' (' . $daily['totals']['sessions'] . ')',
+        ['class' => 'block-moodle-sence-report__filter' . ($day === '' ? ' is-active' : '')]
+    );
+    // Lista de días (sin filtro aplicado) para el nav.
+    $alldays = report_builder::build_daily($courseid, '');
+    foreach ($alldays['days'] as $dk => $block) {
+        $url = new moodle_url($reporturl, ['view' => 'daily', 'day' => $dk]);
+        $count = count($block->sessions);
+        $pend = $block->open > 0 ? ' · ' . $block->open . ' pend.' : '';
+        echo html_writer::link(
+            $url,
+            $block->label . ' (' . $count . $pend . ')',
+            ['class' => 'block-moodle-sence-report__filter' . ($day === $dk ? ' is-active' : '')]
+        );
+    }
+    echo html_writer::end_tag('nav');
+
+    $csvparams = ['view' => 'daily', 'download' => 1];
+    if ($day !== '') {
+        $csvparams['day'] = $day;
+    }
+    echo html_writer::link(new moodle_url($reporturl, $csvparams), get_string('report_download_csv', 'block_moodle_sence'), [
+        'class' => 'btn btn-secondary',
+    ]);
+    echo html_writer::link($courseurl, get_string('backtocourse', 'block_moodle_sence'), [
+        'class' => 'btn btn-primary',
+    ]);
+    echo html_writer::end_div();
+
+    if (empty($daily['days'])) {
+        echo $OUTPUT->notification(get_string('daily_empty', 'block_moodle_sence'), 'info');
+    } else {
+        foreach ($daily['days'] as $dayblock) {
+            echo html_writer::start_div('block-moodle-sence-report__day');
+            $heading = $dayblock->label;
+            if ($dayblock->open > 0) {
+                $heading .= ' — ' . get_string('daily_pending_count', 'block_moodle_sence', $dayblock->open);
+            }
+            echo html_writer::tag('h3', $heading, ['class' => 'block-moodle-sence-report__day-title']);
+
+            $table = new html_table();
+            $table->attributes['class'] = 'generaltable block-moodle-sence-report__table';
+            $table->head = [
+                get_string('report_col_name', 'block_moodle_sence'),
+                get_string('report_col_run', 'block_moodle_sence'),
+                get_string('daily_col_start', 'block_moodle_sence'),
+                get_string('daily_col_end', 'block_moodle_sence'),
+                get_string('daily_col_duration', 'block_moodle_sence'),
+                get_string('report_col_status', 'block_moodle_sence'),
+                get_string('report_col_codes', 'block_moodle_sence'),
+            ];
+
+            foreach ($dayblock->sessions as $s) {
+                $endcell = '—';
+                if ($s->status === 'open') {
+                    $endcell = html_writer::span(
+                        get_string('daily_end_pending', 'block_moodle_sence'),
+                        'block-moodle-sence-report__pending'
+                    );
+                } else if ($s->timeend > 0) {
+                    $endcell = userdate($s->timeend);
+                } else {
+                    $endcell = get_string('daily_end_unknown', 'block_moodle_sence');
+                }
+
+                $duration = $s->duration > 0
+                    ? format_time($s->duration)
+                    : ($s->status === 'open' ? '—' : '—');
+
+                $badge = html_writer::span(
+                    $s->statuslabel,
+                    'block-moodle-sence-report__badge block-moodle-sence-report__badge--daily-' . $s->status
+                );
+
+                $codes = html_writer::div('Curso/Acción: ' . s($s->codcurso ?: '—')) .
+                    ($s->idsesionsence
+                        ? html_writer::div(s($s->idsesionsence), 'text-muted small')
+                        : '');
+
+                $table->data[] = [
+                    html_writer::link($s->profileurl, s($s->fullname)) .
+                        ($s->email ? html_writer::div(s($s->email), 'small text-muted') : ''),
+                    s($s->run),
+                    userdate($s->timestart),
+                    $endcell,
+                    $duration,
+                    $badge,
+                    $codes,
+                ];
+            }
+
+            echo html_writer::table($table);
+            echo html_writer::end_div();
+        }
+    }
+
+    echo html_writer::end_div();
+    echo $OUTPUT->footer();
+    exit;
+}
+
+// —— Vista participantes (existente) ——
 echo html_writer::start_div('block-moodle-sence-report__summary');
 $cards = [
     'ok' => report_builder::STATUS_OK,
@@ -167,7 +369,7 @@ $cards = [
     'nogroup' => report_builder::STATUS_NOGROUP,
 ];
 foreach ($cards as $css => $key) {
-    $url = new moodle_url($reporturl, ['status' => $key]);
+    $url = new moodle_url($reporturl, ['view' => 'participants', 'status' => $key]);
     $active = ($filter === $key) ? ' is-active' : '';
     echo html_writer::link($url, html_writer::div(
         html_writer::span((string) ($summary[$key] ?? 0), 'block-moodle-sence-report__count') .
@@ -191,14 +393,14 @@ echo html_writer::start_div('block-moodle-sence-report__toolbar');
 echo html_writer::start_tag('nav', ['class' => 'block-moodle-sence-report__filters', 'aria-label' => 'Filtros']);
 foreach ($filters as $key => $label) {
     $url = ($key === 'all')
-        ? $reporturl
-        : new moodle_url($reporturl, ['status' => $key]);
+        ? new moodle_url($reporturl, ['view' => 'participants'])
+        : new moodle_url($reporturl, ['view' => 'participants', 'status' => $key]);
     $class = 'block-moodle-sence-report__filter' . ($filter === $key || ($key === 'all' && $filter === 'all') ? ' is-active' : '');
     echo html_writer::link($url, $label, ['class' => $class]);
 }
 echo html_writer::end_tag('nav');
 
-$csvurl = new moodle_url($reporturl, ['status' => $filter, 'download' => 1]);
+$csvurl = new moodle_url($reporturl, ['view' => 'participants', 'status' => $filter, 'download' => 1]);
 echo html_writer::link($csvurl, get_string('report_download_csv', 'block_moodle_sence'), [
     'class' => 'btn btn-secondary',
 ]);
@@ -266,6 +468,7 @@ foreach ($rows as $r) {
     $actioncell = '—';
     if (isset($remindable[$r->status]) && !empty($r->email)) {
         $remindurl = new moodle_url($reporturl, [
+            'view' => 'participants',
             'status' => $filter,
             'action' => 'remind',
             'userid' => $r->userid,

@@ -30,17 +30,20 @@ class notify_open_sessions extends \core\task\scheduled_task {
             $warnseconds = 900;
         }
 
-        $opens = $DB->get_records_select(
+        $candidates = $DB->get_records_select(
             'block_sence',
             "idsesionsence IS NOT NULL AND idsesionsence <> ''",
             null,
             'firstacess ASC'
         );
-        if (empty($opens)) {
+        if (empty($candidates)) {
             return;
         }
 
-        foreach ($opens as $rec) {
+        foreach ($candidates as $rec) {
+            if (!\block_moodle_sence\session_manager::is_open_record($rec)) {
+                continue;
+            }
             $parsed = \block_moodle_sence_parse_session_alumno((string) $rec->idsesionalumno);
             if (!$parsed) {
                 continue;
