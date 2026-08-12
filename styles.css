@@ -54,7 +54,7 @@ body.block-moodle-sence-gated {
     flex-wrap: wrap;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 3px solid var(--bms-red);
+    border-bottom: 3px solid var(--bms-navy);
 }
 
 .block-moodle-sence-brand__mark {
@@ -126,7 +126,13 @@ body.block-moodle-sence-gated {
 
 body.block-moodle-sence-session-warn .block-moodle-sence-sticky,
 body.block-moodle-sence-session-expired .block-moodle-sence-sticky {
-    background: linear-gradient(135deg, var(--bms-warn), var(--bms-red));
+    background: linear-gradient(135deg, #1a3a5c, var(--bms-navy));
+    border-top: 3px solid var(--bms-warn);
+}
+
+body.block-moodle-sence-session-warn .block-moodle-sence-sticky__time,
+body.block-moodle-sence-session-expired .block-moodle-sence-sticky__time {
+    color: #ffd89a;
 }
 
 body.block-moodle-sence-session-open {
@@ -219,7 +225,7 @@ body.block-moodle-sence-gated #block-region-side-post {
 }
 
 .block-moodle-sence-timer--warn {
-    background: linear-gradient(135deg, var(--bms-warn), var(--bms-red));
+    background: linear-gradient(135deg, #1a3a5c, #c45c26);
 }
 
 .block-moodle-sence-timer__label {
@@ -227,19 +233,21 @@ body.block-moodle-sence-gated #block-region-side-post {
     font-size: 0.75rem;
     opacity: 0.92;
     margin-bottom: 0.15rem;
+    color: #fff;
 }
 
 .block-moodle-sence-timer__value {
     font-size: clamp(1.25rem, 4vw, 1.55rem);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.05em;
+    color: #fff;
 }
 
 .block-moodle-sence-timeout-banner {
     z-index: 100000;
     width: 100%;
-    background: var(--bms-red);
-    color: #fff;
+    background: linear-gradient(135deg, var(--bms-navy), #0d2a4d);
+    color: #ffffff;
     position: fixed;
     top: 0;
     left: 0;
@@ -247,12 +255,18 @@ body.block-moodle-sence-gated #block-region-side-post {
     text-align: center;
     padding: 0.8rem 1rem;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+    border-bottom: 3px solid var(--bms-warn);
 }
 
 .block-moodle-sence-timeout-banner h3 {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
+    color: #ffffff !important;
+}
+
+.block-moodle-sence-timeout-banner a {
+    color: #ffd89a !important;
 }
 
 .block-moodle-sence-rce-form {
