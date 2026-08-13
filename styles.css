@@ -99,7 +99,8 @@ body.block-moodle-sence-gated {
     height: auto !important;
     max-height: 7rem;
     min-height: 0 !important;
-    z-index: 1060;
+    /* Bajo el navbar (1030), dropdowns y cajón de mensajes (1050). */
+    z-index: 1020;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -288,7 +289,7 @@ body.block-moodle-sence-gated #block-region-side-post {
 }
 
 .block-moodle-sence-timeout-banner {
-    z-index: 1035;
+    z-index: 1021;
     width: 100%;
     background: linear-gradient(135deg, var(--bms-navy), #0d2a4d);
     color: #ffffff;
