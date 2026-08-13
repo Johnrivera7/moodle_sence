@@ -58,7 +58,7 @@ $string['notoken'] = 'Configure RUT OTEC y Token en Administración → Plugins 
 $string['mustlogin'] = 'Debe iniciar sesión SENCE antes de acceder al contenido del curso.';
 $string['gatetitle'] = 'Registro de asistencia SENCE requerido';
 $string['sessionactive'] = 'Sesión SENCE activa';
-$string['sessionactive_mustclose'] = 'Recuerde cerrar la sesión SENCE al terminar. Use el botón rojo <strong>Cerrar sesión SENCE</strong> (también visible abajo en la barra fija).';
+$string['sessionactive_mustclose'] = 'Recuerde cerrar la sesión SENCE al terminar. El botón rojo está siempre visible en la <strong>barra superior</strong> (junto al cronómetro).';
 $string['session_expired_title'] = 'Tiempo de sesión agotado';
 $string['session_expired_mustclose'] = 'Debe cerrar su sesión SENCE ahora con ClaveÚnica para completar la asistencia. El contenido del curso está bloqueado hasta el cierre.';
 $string['session_expired_clickclose'] = 'Su sesión SENCE venció. Pulse <strong>Cerrar sesión SENCE</strong> e ingrese ClaveÚnica. Si SENCE ya la dio por cerrada (por ejemplo, quedó abierta desde ayer), podrá iniciar una nueva.';
@@ -66,7 +66,7 @@ $string['session_expired_closing'] = 'Tiempo de sesión agotado. Redirigiendo a 
 $string['logout_stale_closed'] = 'SENCE ya no tiene esa sesión activa (venció o ya estaba cerrada). Se liberó el bloqueo local: puede iniciar una nueva sesión SENCE.';
 $string['logout_stale_closed_email'] = 'Nota: era un cierre de sesión. SENCE devolvió error (sesión ya no vigente). El plugin cerró la sesión local para que el alumno no quede trabado.';
 $string['timerlabel'] = 'Tiempo restante';
-$string['timerhelp'] = 'Cuando el cronómetro llegue a cero se iniciará el cierre de sesión SENCE automáticamente (deberá confirmar con ClaveÚnica).';
+$string['timerhelp'] = 'El cronómetro y el cierre están fijos arriba, aunque oculte el bloque. Al llegar a cero se inicia el cierre con ClaveÚnica.';
 $string['claveunicahelp'] = 'Será solicitada su <strong>ClaveÚnica</strong>. Para obtenerla o recuperarla ingrese al <a href="https://claveunica.gob.cl/" target="_blank" rel="noopener">Portal Ciudadano</a>.';
 $string['callbacktitle'] = 'Retorno SENCE';
 $string['invalidcallback'] = 'Enlace de retorno no válido.';

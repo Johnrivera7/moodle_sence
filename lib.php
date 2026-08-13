@@ -892,12 +892,14 @@ function block_moodle_sence_render_post_form(
     string $action,
     array $fields,
     string $label,
-    string $formid = ''
+    string $formid = '',
+    string $formclass = 'block-moodle-sence-rce-form',
+    string $buttonclass = 'btn block-moodle-sence-btn block-moodle-sence-btn--primary'
 ): string {
     $attrs = [
         'method' => 'post',
         'action' => $action,
-        'class' => 'block-moodle-sence-rce-form',
+        'class' => $formclass,
     ];
     if ($formid !== '') {
         $attrs['id'] = $formid;
@@ -911,7 +913,7 @@ function block_moodle_sence_render_post_form(
     }
     $out .= \html_writer::tag('button', $label, [
         'type' => 'submit',
-        'class' => 'btn block-moodle-sence-btn block-moodle-sence-btn--primary',
+        'class' => $buttonclass,
     ]);
     $out .= \html_writer::end_tag('form');
     return $out;

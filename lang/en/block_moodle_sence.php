@@ -58,7 +58,7 @@ $string['notoken'] = 'Configure OTEC RUT and token in block settings.';
 $string['mustlogin'] = 'You must start a SENCE session before accessing course content.';
 $string['gatetitle'] = 'SENCE attendance registration required';
 $string['sessionactive'] = 'Active SENCE session';
-$string['sessionactive_mustclose'] = 'Remember to end the SENCE session when finished. Use the red <strong>End SENCE session</strong> button (also visible in the fixed bar at the bottom).';
+$string['sessionactive_mustclose'] = 'Remember to end the SENCE session when finished. The red button stays visible in the <strong>top bar</strong> (next to the timer).';
 $string['session_expired_title'] = 'Session time expired';
 $string['session_expired_mustclose'] = 'You must end your SENCE session now with ClaveÚnica to complete attendance. Course content is blocked until logout.';
 $string['session_expired_clickclose'] = 'Your SENCE session expired. Click <strong>End SENCE session</strong> and enter ClaveÚnica. If SENCE already closed it (e.g. left open since yesterday), you can start a new one.';
@@ -66,7 +66,7 @@ $string['session_expired_closing'] = 'Session time expired. Redirecting to end S
 $string['logout_stale_closed'] = 'SENCE no longer has that session (it expired or was already closed). Local lock was released: you can start a new SENCE session.';
 $string['logout_stale_closed_email'] = 'Note: this was a logout. SENCE returned an error (session no longer active). The plugin closed the local session so the learner is not stuck.';
 $string['timerlabel'] = 'Time remaining';
-$string['timerhelp'] = 'When the timer reaches zero, SENCE logout will start automatically (you must confirm with ClaveÚnica).';
+$string['timerhelp'] = 'The timer and logout stay fixed at the top, even if you hide the block. When it reaches zero, SENCE logout starts with ClaveÚnica.';
 $string['claveunicahelp'] = 'Your <strong>ClaveÚnica</strong> will be requested. Get or recover it at the <a href="https://claveunica.gob.cl/" target="_blank" rel="noopener">Citizen Portal</a>.';
 $string['callbacktitle'] = 'SENCE callback';
 $string['invalidcallback'] = 'Invalid callback link.';
