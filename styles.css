@@ -88,18 +88,18 @@ body.block-moodle-sence-gated {
     max-width: 28rem;
 }
 
-/* Barra fija bajo el navbar: cronómetro + cierre, independiente del cajón */
+/* Barra fija al pie: cronómetro + cierre, sin tapar el menú de Moodle */
 .block-moodle-sence-sticky {
     position: fixed !important;
     left: 0 !important;
     right: 0 !important;
-    top: var(--bms-sticky-top, 0px) !important;
-    bottom: auto !important;
-    inset: var(--bms-sticky-top, 0px) 0 auto 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    inset: auto 0 0 0 !important;
     height: auto !important;
     max-height: 7rem;
     min-height: 0 !important;
-    /* Bajo el navbar (1030), dropdowns y cajón de mensajes (1050). */
+    /* Sobre el contenido; bajo navbar (1030), dropdowns y cajón (1050). */
     z-index: 1020;
     display: flex;
     align-items: center;
@@ -109,8 +109,9 @@ body.block-moodle-sence-gated {
     padding: 0.55rem 1rem;
     background: linear-gradient(135deg, var(--bms-navy), #0d2a4d);
     color: #fff;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
-    border-bottom: 3px solid var(--bms-blue);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.22);
+    border-top: 3px solid var(--bms-blue);
+    border-bottom: none;
 }
 
 .block-moodle-sence-sticky__left {
@@ -163,7 +164,7 @@ body.block-moodle-sence-gated {
 body.block-moodle-sence-session-warn .block-moodle-sence-sticky,
 body.block-moodle-sence-session-expired .block-moodle-sence-sticky,
 .block-moodle-sence-sticky--alert {
-    border-bottom-color: var(--bms-warn);
+    border-top-color: var(--bms-warn);
 }
 
 body.block-moodle-sence-session-warn .block-moodle-sence-sticky__time,
@@ -172,10 +173,10 @@ body.block-moodle-sence-session-expired .block-moodle-sence-sticky__time,
     color: #ffd89a;
 }
 
-body.block-moodle-sence-session-open #topofscroll,
+body.block-moodle-sence-session-open #page,
 body.block-moodle-sence-session-open #page-content,
 body.block-moodle-sence-session-open #region-main {
-    padding-top: calc(var(--bms-sticky-h, 3.4rem) + 0.35rem);
+    padding-bottom: calc(var(--bms-sticky-h, 3.4rem) + 0.5rem);
 }
 
 @media (max-width: 576px) {
@@ -294,7 +295,8 @@ body.block-moodle-sence-gated #block-region-side-post {
     background: linear-gradient(135deg, var(--bms-navy), #0d2a4d);
     color: #ffffff;
     position: fixed;
-    top: calc(var(--bms-sticky-top, 0px) + var(--bms-sticky-h, 0px));
+    top: auto;
+    bottom: calc(var(--bms-sticky-h, 3.4rem));
     left: 0;
     right: 0;
     text-align: center;

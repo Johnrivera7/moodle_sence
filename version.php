@@ -8,7 +8,7 @@ defined('MOODLE_INTERNAL') || die();
  */
 
 $plugin->component   = 'block_moodle_sence';
-$plugin->version     = 2026081304;
+$plugin->version     = 2026081305;
 $plugin->requires    = 2024100700;
 $plugin->maturity    = MATURITY_STABLE;
-$plugin->release     = '1.4.4-moodle45';
+$plugin->release     = '1.4.5-moodle45';

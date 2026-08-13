@@ -446,7 +446,7 @@ JS;
     }
 
     /**
-     * Mueve la barra de cierre al body y la pega bajo el navbar de Moodle.
+     * Mueve la barra de cierre al body y la pega al pie (no tapa el menú Moodle).
      *
      * @return string
      */
@@ -457,34 +457,14 @@ JS;
   if (!bar) {
     return;
   }
-  function navBottom() {
-    var nodes = document.querySelectorAll(
-      '.navbar.fixed-top, header.navbar.fixed-top, #page-header .navbar.fixed-top, header, [role="banner"]'
-    );
-    var best = 0;
-    nodes.forEach(function (el) {
-      if (el === bar || (bar.contains && bar.contains(el))) {
-        return;
-      }
-      var r = el.getBoundingClientRect();
-      var h = r.height;
-      if (r.top < -4 || r.top > 72 || h < 24 || h > 96) {
-        return;
-      }
-      best = Math.max(best, Math.round(r.bottom));
-    });
-    return Math.min(Math.max(0, best), 96);
-  }
   function place() {
-    bar.style.setProperty('bottom', 'auto', 'important');
+    bar.style.setProperty('top', 'auto', 'important');
+    bar.style.setProperty('bottom', '0', 'important');
     bar.style.setProperty('height', 'auto', 'important');
     bar.style.setProperty('min-height', '0', 'important');
-    var top = navBottom();
-    bar.style.setProperty('top', top + 'px', 'important');
     bar.style.setProperty('left', '0', 'important');
     bar.style.setProperty('right', '0', 'important');
     var h = bar.offsetHeight || 0;
-    document.documentElement.style.setProperty('--bms-sticky-top', top + 'px');
     document.documentElement.style.setProperty('--bms-sticky-h', h + 'px');
   }
   function mount() {
@@ -501,7 +481,6 @@ JS;
     mount();
   }
   window.addEventListener('resize', place);
-  window.addEventListener('scroll', place, { passive: true });
 })();
 JS;
     }
