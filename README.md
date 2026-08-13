@@ -4,7 +4,7 @@ Bloque **libre (MIT)** para [Registro de Asistencia SENCE](docs/integracion_regi
 
 - **Autor:** [John Rivera](https://github.com/Johnrivera7)
 - **Repositorio:** https://github.com/Johnrivera7/moodle_sence
-- **Release:** `1.4.2-moodle45`
+- **Release:** `1.4.3-moodle45`
 
 ## Flujo RCE (login / logout)
 
@@ -80,7 +80,7 @@ Al instalar/actualizar, el bloque crea el campo de perfil **RUT** (`shortname=ru
 | Gate curso | Cubre `#region-main` hasta registrar asistencia |
 | Becarios / forzar cierre / glosas | Grupos becarios, cierre obligatorio, glosas Anexo 2 |
 | Panel gestor | Visible con `viewhiddenactivities` |
-| Cronómetro | Default 2 h (por curso o global) |
+| Cronómetro | Default 2 h; barra fija bajo el header (no tapa el curso) |
 | Vencimiento | Default 3 h desde el inicio: no se cierra en SENCE; se pide iniciar de nuevo |
 | Recordatorios | Desde 15 min antes del cronómetro hasta el tope de vencimiento (según hora de inicio) |
 

@@ -90,10 +90,15 @@ body.block-moodle-sence-gated {
 
 /* Barra fija bajo el navbar: cronómetro + cierre, independiente del cajón */
 .block-moodle-sence-sticky {
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: var(--bms-sticky-top, 0);
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: var(--bms-sticky-top, 0px) !important;
+    bottom: auto !important;
+    inset: var(--bms-sticky-top, 0px) 0 auto 0 !important;
+    height: auto !important;
+    max-height: 7rem;
+    min-height: 0 !important;
     z-index: 1060;
     display: flex;
     align-items: center;
