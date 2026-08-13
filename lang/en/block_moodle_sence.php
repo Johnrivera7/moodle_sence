@@ -19,15 +19,17 @@ $string['cerrarsesion'] = 'End SENCE session';
 $string['cerrarsesion_help'] = 'When you finish the class or study period, you must <strong>end the SENCE session</strong> with ClaveÚnica. Without logout, attendance may remain incomplete in SENCE.';
 $string['forzarcierre'] = 'Require login and logout';
 $string['sesionmax'] = 'Maximum session duration';
-$string['sesionmax_help'] = 'Maximum SENCE session length for this course (timer). If empty, uses the plugin default.';
+$string['sesionmax_help'] = 'Countdown for this course. If empty, uses the global default (2 hours). The cutoff to stop posting logout to SENCE is the plugin stale setting (3 hours).';
 $string['settingsheading_session'] = 'Session and close alerts';
-$string['settingsheading_session_desc'] = 'Default timer duration and automatic emails when a session is open or about to expire.';
-$string['defaultsencetimeout'] = 'Maximum session duration (default)';
-$string['defaultsencetimeout_desc'] = 'Used when the course block does not set its own duration. Default 3 hours.';
+$string['settingsheading_session_desc'] = 'On-screen timer (default 2 h), stale cutoff from login (default 3 h) and reminder 15 minutes before. Emails follow each session start time, not office hours.';
+$string['defaultsencetimeout'] = 'Timer duration (default)';
+$string['defaultsencetimeout_desc'] = 'On-screen countdown if the course block does not set its own. Default 2 hours.';
+$string['sessionstaleafter'] = 'SENCE session expiry (from start)';
+$string['sessionstaleafter_desc'] = 'After this time from login, do not POST logout to SENCE (often returns 301). Local session is closed and the learner must start a new one. Default 3 hours (legacy SENCE rule). Should be greater than or equal to the timer.';
 $string['alertacierrecron'] = 'Send close-alert emails (scheduled task)';
-$string['alertacierrecron_desc'] = 'Every 15 minutes checks open sessions. Emails the learner (and block alert emails) when within the configured margin or already expired. Actual SENCE logout still requires ClaveÚnica.';
+$string['alertacierrecron_desc'] = 'Checks open sessions. Emails the learner from the configured margin (e.g. 15 min before the timer) until the global expiry. After that cutoff there is no reminder: the session is stale and the next visit asks to start again.';
 $string['alertacierreminutos'] = 'Warn when remaining';
-$string['alertacierreminutos_desc'] = 'Lead time before timer end to send the alert email (recommended: 15 minutes).';
+$string['alertacierreminutos_desc'] = 'How long before the timer ends to send the reminder (recommended: 15 minutes). One email per session.';
 $string['task_notify_open_sessions'] = 'SENCE: notify open / unclosed sessions';
 $string['lineasdecap'] = 'Training line';
 $string['linea1'] = 'Social programs (1)';
@@ -59,7 +61,10 @@ $string['sessionactive'] = 'Active SENCE session';
 $string['sessionactive_mustclose'] = 'Remember to end the SENCE session when finished. Use the red <strong>End SENCE session</strong> button (also visible in the fixed bar at the bottom).';
 $string['session_expired_title'] = 'Session time expired';
 $string['session_expired_mustclose'] = 'You must end your SENCE session now with ClaveÚnica to complete attendance. Course content is blocked until logout.';
+$string['session_expired_clickclose'] = 'Your SENCE session expired. Click <strong>End SENCE session</strong> and enter ClaveÚnica. If SENCE already closed it (e.g. left open since yesterday), you can start a new one.';
 $string['session_expired_closing'] = 'Session time expired. Redirecting to end SENCE session with ClaveÚnica…';
+$string['logout_stale_closed'] = 'SENCE no longer has that session (it expired or was already closed). Local lock was released: you can start a new SENCE session.';
+$string['logout_stale_closed_email'] = 'Note: this was a logout. SENCE returned an error (session no longer active). The plugin closed the local session so the learner is not stuck.';
 $string['timerlabel'] = 'Time remaining';
 $string['timerhelp'] = 'When the timer reaches zero, SENCE logout will start automatically (you must confirm with ClaveÚnica).';
 $string['claveunicahelp'] = 'Your <strong>ClaveÚnica</strong> will be requested. Get or recover it at the <a href="https://claveunica.gob.cl/" target="_blank" rel="noopener">Citizen Portal</a>.';
@@ -67,7 +72,7 @@ $string['callbacktitle'] = 'SENCE callback';
 $string['invalidcallback'] = 'Invalid callback link.';
 $string['senceerror'] = 'SENCE error (code {$a}).';
 $string['senceerrorfull'] = 'Error: {$a->message} ({$a->code}). Contact platform support.';
-$string['senceerror_detail_html'] = '<div class="block-moodle-sence-error-card"><h3>SENCE error {$a->code}</h3><p class="block-moodle-sence-error-card__msg"><strong>{$a->message}</strong></p>{$a->tip}<dl class="block-moodle-sence-codes"><dt>Participant</dt><dd>{$a->fullname} — RUT {$a->run}</dd><dt>Moodle course</dt><dd>{$a->coursename} ({$a->shortname})</dd><dt>Course link</dt><dd><a href="{$a->courseurl}">{$a->courseurl}</a></dd><dt>Group(s)</dt><dd>{$a->groups}</dd><dt>CodSence</dt><dd>{$a->codsence}</dd><dt>Course code / Action ID</dt><dd>{$a->codigocurso} / {$a->idaccion}</dd><dt>OTEC</dt><dd>{$a->otec}</dd><dt>Line</dt><dd>{$a->linea}</dd><dt>Date / zone</dt><dd>{$a->fechahora} {$a->zona}</dd><dt>IdSesionAlumno</dt><dd>{$a->idsesionalumno}</dd></dl></div>';
+$string['senceerror_detail_html'] = '<div class="block-moodle-sence-error-card"><h3>SENCE error {$a->code}</h3><p class="block-moodle-sence-error-card__msg"><strong>{$a->message}</strong></p>{$a->tip}<dl class="block-moodle-sence-codes"><dt>Participant</dt><dd>{$a->fullname} — RUT {$a->run}</dd><dt>Moodle course</dt><dd>{$a->coursename} ({$a->shortname})</dd><dt>Course link</dt><dd><a href="{$a->courseurl}">{$a->courseurl}</a></dd><dt>Group(s)</dt><dd>{$a->groups}</dd><dt>CodSence</dt><dd>{$a->codsence}</dd><dt>Course code / Action ID</dt><dd>{$a->codigocurso} / {$a->idaccion}</dd><dt>OTEC</dt><dd>{$a->otec}</dd><dt>Line</dt><dd>{$a->linea}</dd><dt>Date / zone</dt><dd>{$a->fechahora} {$a->zona}</dd><dt>IdSesionAlumno</dt><dd>{$a->idsesionalumno}</dd><dt>IdSesionSence</dt><dd>{$a->idsesionsence}</dd></dl></div>';
 $string['senceerror_detail_text'] = 'SENCE error {$a->code}: {$a->message}
 
 What to check: {$a->tip}
@@ -82,10 +87,12 @@ Course code / Action ID: {$a->codigocurso} / {$a->idaccion}
 OTEC: {$a->otec}
 Line: {$a->linea}
 Date/zone: {$a->fechahora} {$a->zona}
-IdSesionAlumno: {$a->idsesionalumno}';
+IdSesionAlumno: {$a->idsesionalumno}
+IdSesionSence: {$a->idsesionsence}';
 $string['alert_email_subject'] = 'SENCE alert {$a->code} — {$a->shortname}';
 $string['alert_email_sence_support'] = 'Report to controlelearning@sence.cl with the error code.';
 $string['glosa208_tip'] = 'The RUT is not on the authorised SENCE roster for this action. Check OC/OTIC/LCE and that the learner is in the correct SENCE-XXXX group.';
+$string['glosa301_tip'] = 'If login worked with the same line and codes, 301 on logout usually means SENCE no longer has that session (expired or already closed). The plugin releases the local session so a new one can start. If 301 happens on login, check the action ID (group SENCE-XXXXXXX, min. 7 characters) and that the line is 3 for Impulsa Personas / tax franchise.';
 $string['glosa209_tip'] = 'Check the OTEC RUT configured in the block / plugin settings.';
 $string['glosa211_tip'] = 'Renew the OTEC token in SENCE RTS and update it in Moodle.';
 $string['glosa212_tip'] = 'The OTEC token expired. Generate a new one in RTS and save it in Moodle.';

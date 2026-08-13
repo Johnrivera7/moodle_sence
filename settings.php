@@ -46,6 +46,13 @@ if ($ADMIN->fulltree) {
         'block_moodle_sence/defaultsencetimeout',
         get_string('defaultsencetimeout', 'block_moodle_sence'),
         get_string('defaultsencetimeout_desc', 'block_moodle_sence'),
+        7200
+    ));
+
+    $settings->add(new admin_setting_configduration(
+        'block_moodle_sence/sessionstaleafter',
+        get_string('sessionstaleafter', 'block_moodle_sence'),
+        get_string('sessionstaleafter_desc', 'block_moodle_sence'),
         10800
     ));
 

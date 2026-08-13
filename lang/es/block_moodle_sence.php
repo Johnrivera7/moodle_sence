@@ -19,15 +19,17 @@ $string['cerrarsesion'] = 'Cerrar sesión SENCE';
 $string['cerrarsesion_help'] = 'Al terminar la clase o la jornada, debe <strong>cerrar la sesión SENCE</strong> con ClaveÚnica. Sin cierre, la asistencia puede quedar incompleta en SENCE.';
 $string['forzarcierre'] = 'Exigir inicio y cierre de sesión';
 $string['sesionmax'] = 'Duración máxima de sesión';
-$string['sesionmax_help'] = 'Tiempo máximo de la sesión SENCE en este curso (cronómetro). Si no se define, usa el valor por defecto del plugin.';
+$string['sesionmax_help'] = 'Cronómetro de este curso. Si no se define, usa el default global (2 horas). El tope para dejar de cerrar en SENCE se configura en los ajustes del plugin (vencimiento, 3 horas).';
 $string['settingsheading_session'] = 'Sesión y alertas de cierre';
-$string['settingsheading_session_desc'] = 'Duración por defecto del cronómetro y correos automáticos cuando una sesión queda abierta o por vencer.';
-$string['defaultsencetimeout'] = 'Duración máxima de sesión (default)';
-$string['defaultsencetimeout_desc'] = 'Se usa si el bloque del curso no define su propia duración. Por defecto 3 horas.';
+$string['settingsheading_session_desc'] = 'Cronómetro (default 2 h), tope de vencimiento desde el inicio (default 3 h) y recordatorio 15 minutos antes. Los correos se envían según la hora de inicio de cada sesión, no por horario laboral.';
+$string['defaultsencetimeout'] = 'Duración del cronómetro (default)';
+$string['defaultsencetimeout_desc'] = 'Tiempo del cronómetro en pantalla si el bloque del curso no define el suyo. Por defecto 2 horas.';
+$string['sessionstaleafter'] = 'Vencimiento de sesión SENCE (desde el inicio)';
+$string['sessionstaleafter_desc'] = 'Pasado este tiempo desde el inicio, no se envía cierre a SENCE (suele devolver 301). Se cierra la sesión local y el alumno debe iniciar una nueva. Por defecto 3 horas (norma histórica SENCE). Debe ser mayor o igual al cronómetro.';
 $string['alertacierrecron'] = 'Enviar correos de alerta de cierre (tarea programada)';
-$string['alertacierrecron_desc'] = 'Cada 15 minutos revisa sesiones abiertas. Avisa al alumno (y a correos de alerta del bloque) cuando falte el margen configurado o ya haya vencido. El cierre real en SENCE sigue requiriendo ClaveÚnica.';
+$string['alertacierrecron_desc'] = 'Revisa sesiones abiertas. Avisa al alumno desde el margen configurado (p. ej. 15 min antes del cronómetro) hasta el vencimiento global. Después de ese tope no hay recordatorio: la sesión se da por vencida y al volver se pide iniciar de nuevo.';
 $string['alertacierreminutos'] = 'Avisar cuando falten';
-$string['alertacierreminutos_desc'] = 'Margen antes del fin del cronómetro para enviar el correo de alerta (recomendado: 15 minutos).';
+$string['alertacierreminutos_desc'] = 'Cuánto antes del fin del cronómetro enviar el recordatorio (recomendado: 15 minutos). Un correo por sesión.';
 $string['task_notify_open_sessions'] = 'SENCE: avisar sesiones abiertas / sin cierre';
 $string['lineasdecap'] = 'Línea de capacitación';
 $string['linea1'] = 'Programas Sociales o Becas (1)';
@@ -59,7 +61,10 @@ $string['sessionactive'] = 'Sesión SENCE activa';
 $string['sessionactive_mustclose'] = 'Recuerde cerrar la sesión SENCE al terminar. Use el botón rojo <strong>Cerrar sesión SENCE</strong> (también visible abajo en la barra fija).';
 $string['session_expired_title'] = 'Tiempo de sesión agotado';
 $string['session_expired_mustclose'] = 'Debe cerrar su sesión SENCE ahora con ClaveÚnica para completar la asistencia. El contenido del curso está bloqueado hasta el cierre.';
+$string['session_expired_clickclose'] = 'Su sesión SENCE venció. Pulse <strong>Cerrar sesión SENCE</strong> e ingrese ClaveÚnica. Si SENCE ya la dio por cerrada (por ejemplo, quedó abierta desde ayer), podrá iniciar una nueva.';
 $string['session_expired_closing'] = 'Tiempo de sesión agotado. Redirigiendo a cerrar sesión SENCE con ClaveÚnica…';
+$string['logout_stale_closed'] = 'SENCE ya no tiene esa sesión activa (venció o ya estaba cerrada). Se liberó el bloqueo local: puede iniciar una nueva sesión SENCE.';
+$string['logout_stale_closed_email'] = 'Nota: era un cierre de sesión. SENCE devolvió error (sesión ya no vigente). El plugin cerró la sesión local para que el alumno no quede trabado.';
 $string['timerlabel'] = 'Tiempo restante';
 $string['timerhelp'] = 'Cuando el cronómetro llegue a cero se iniciará el cierre de sesión SENCE automáticamente (deberá confirmar con ClaveÚnica).';
 $string['claveunicahelp'] = 'Será solicitada su <strong>ClaveÚnica</strong>. Para obtenerla o recuperarla ingrese al <a href="https://claveunica.gob.cl/" target="_blank" rel="noopener">Portal Ciudadano</a>.';
@@ -67,7 +72,7 @@ $string['callbacktitle'] = 'Retorno SENCE';
 $string['invalidcallback'] = 'Enlace de retorno no válido.';
 $string['senceerror'] = 'Error SENCE (código {$a}). Revise Anexo 2 del manual técnico.';
 $string['senceerrorfull'] = 'Error: {$a->message} ({$a->code}). Informe a soporte de plataforma.';
-$string['senceerror_detail_html'] = '<div class="block-moodle-sence-error-card"><h3>Error SENCE {$a->code}</h3><p class="block-moodle-sence-error-card__msg"><strong>{$a->message}</strong></p>{$a->tip}<dl class="block-moodle-sence-codes"><dt>Participante</dt><dd>{$a->fullname} — RUT {$a->run}</dd><dt>Curso Moodle</dt><dd>{$a->coursename} ({$a->shortname})</dd><dt>Enlace del curso</dt><dd><a href="{$a->courseurl}">{$a->courseurl}</a></dd><dt>Grupo(s)</dt><dd>{$a->groups}</dd><dt>CodSence</dt><dd>{$a->codsence}</dd><dt>Código curso / ID acción</dt><dd>{$a->codigocurso} / {$a->idaccion}</dd><dt>OTEC</dt><dd>{$a->otec}</dd><dt>Línea</dt><dd>{$a->linea}</dd><dt>Fecha / zona</dt><dd>{$a->fechahora} {$a->zona}</dd><dt>IdSesionAlumno</dt><dd>{$a->idsesionalumno}</dd></dl></div>';
+$string['senceerror_detail_html'] = '<div class="block-moodle-sence-error-card"><h3>Error SENCE {$a->code}</h3><p class="block-moodle-sence-error-card__msg"><strong>{$a->message}</strong></p>{$a->tip}<dl class="block-moodle-sence-codes"><dt>Participante</dt><dd>{$a->fullname} — RUT {$a->run}</dd><dt>Curso Moodle</dt><dd>{$a->coursename} ({$a->shortname})</dd><dt>Enlace del curso</dt><dd><a href="{$a->courseurl}">{$a->courseurl}</a></dd><dt>Grupo(s)</dt><dd>{$a->groups}</dd><dt>CodSence</dt><dd>{$a->codsence}</dd><dt>Código curso / ID acción</dt><dd>{$a->codigocurso} / {$a->idaccion}</dd><dt>OTEC</dt><dd>{$a->otec}</dd><dt>Línea</dt><dd>{$a->linea}</dd><dt>Fecha / zona</dt><dd>{$a->fechahora} {$a->zona}</dd><dt>IdSesionAlumno</dt><dd>{$a->idsesionalumno}</dd><dt>IdSesionSence</dt><dd>{$a->idsesionsence}</dd></dl></div>';
 $string['senceerror_detail_text'] = 'Error SENCE {$a->code}: {$a->message}
 
 Qué revisar: {$a->tip}
@@ -82,10 +87,12 @@ Código curso / ID acción: {$a->codigocurso} / {$a->idaccion}
 OTEC: {$a->otec}
 Línea: {$a->linea}
 Fecha/zona: {$a->fechahora} {$a->zona}
-IdSesionAlumno: {$a->idsesionalumno}';
+IdSesionAlumno: {$a->idsesionalumno}
+IdSesionSence: {$a->idsesionsence}';
 $string['alert_email_subject'] = 'Alerta SENCE {$a->code} — {$a->shortname}';
 $string['alert_email_sence_support'] = 'Reportar a controlelearning@sence.cl indicando el código de error.';
 $string['glosa208_tip'] = 'El RUT no está en la nómina autorizada de esa acción en SENCE. Verifique OC/OTIC/LCE y que el alumno esté en el grupo SENCE-XXXX correcto (no en otra sociedad o ID de acción).';
+$string['glosa301_tip'] = 'Si el inicio de sesión funcionó con la misma línea y códigos, el 301 al cerrar suele significar que SENCE ya no tiene esa sesión (venció o se cerró sola). El plugin libera la sesión local para poder iniciar otra. Si el 301 ocurre al iniciar, verifique ID de acción (grupo SENCE-XXXXXXX, mín. 7 caracteres) y que la línea sea 3 para Impulsa Personas / Franquicia Tributaria.';
 $string['glosa209_tip'] = 'Revise el RUT OTEC configurado en el bloque / ajustes del plugin.';
 $string['glosa211_tip'] = 'Renueve el token OTEC en RTS SENCE y actualícelo en Moodle.';
 $string['glosa212_tip'] = 'El token OTEC caducó. Genere uno nuevo en RTS y guárdelo en Moodle.';

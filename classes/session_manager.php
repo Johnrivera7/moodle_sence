@@ -86,6 +86,43 @@ class session_manager {
     }
 
     /**
+     * Sesión abierta por IdSesionAlumno (el que SENCE devuelve en el POST de error/cierre).
+     *
+     * @param string $idsesionalumno
+     * @param string $runformatted
+     * @return \stdClass|null
+     */
+    public static function get_open_session_by_alumno_id(string $idsesionalumno, string $runformatted = ''): ?\stdClass {
+        global $DB;
+
+        $idsesionalumno = trim($idsesionalumno);
+        if ($idsesionalumno === '') {
+            return null;
+        }
+
+        $records = $DB->get_records('block_sence', [
+            'idsesionalumno' => $idsesionalumno,
+        ], 'firstacess DESC', '*', 0, 10);
+
+        $runbody = $runformatted !== '' ? rut_helper::run_body($runformatted) : '';
+        $runwith = $runformatted !== '' ? rut_helper::format_run($runformatted) : '';
+
+        foreach ($records as $rec) {
+            if (!self::is_open_record($rec)) {
+                continue;
+            }
+            if ($runformatted !== '') {
+                $stored = (string) ($rec->runalumno ?? '');
+                if ($stored !== $runbody && $stored !== $runwith) {
+                    continue;
+                }
+            }
+            return $rec;
+        }
+        return null;
+    }
+
+    /**
      * Guarda login: runalumno sin guión (lookup acepta ambos formatos).
      *
      * @param \stdClass $data
@@ -100,6 +137,9 @@ class session_manager {
         $rec->idsesionalumno = $data->idsesionalumno;
         $rec->idsesionsence = $data->idsesionsence;
         $rec->firstacess = time();
+        if ($DB->get_manager()->field_exists('block_sence', 'codsence') && isset($data->codsence)) {
+            $rec->codsence = (string) $data->codsence;
+        }
         if ($DB->get_manager()->field_exists('block_sence', 'timeend')) {
             $rec->timeend = 0;
         }

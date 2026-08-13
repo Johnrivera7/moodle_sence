@@ -21,8 +21,9 @@ function xmldb_block_moodle_sence_ensure_schema(): void {
         $table->add_field('runalumno', XMLDB_TYPE_CHAR, '10', null, null, null, null);
         $table->add_field('codcurso', XMLDB_TYPE_CHAR, '100', null, null, null, null);
         $table->add_field('idaccion', XMLDB_TYPE_CHAR, '100', null, null, null, null);
-        $table->add_field('idsesionalumno', XMLDB_TYPE_CHAR, '100', null, null, null, null);
-        $table->add_field('idsesionsence', XMLDB_TYPE_CHAR, '100', null, null, null, null);
+        $table->add_field('idsesionalumno', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('idsesionsence', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('codsence', XMLDB_TYPE_CHAR, '20', null, null, null, null);
         $table->add_field('firstacess', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
         $table->add_field('timeend', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
         $table->add_field('closealertsent', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
@@ -34,8 +35,9 @@ function xmldb_block_moodle_sence_ensure_schema(): void {
     $fields = [
         ['codcurso', XMLDB_TYPE_CHAR, '100', 'runalumno'],
         ['idaccion', XMLDB_TYPE_CHAR, '100', 'codcurso'],
-        ['idsesionalumno', XMLDB_TYPE_CHAR, '100', 'idaccion'],
-        ['idsesionsence', XMLDB_TYPE_CHAR, '100', 'idsesionalumno'],
+        ['codsence', XMLDB_TYPE_CHAR, '20', 'idaccion'],
+        ['idsesionalumno', XMLDB_TYPE_CHAR, '255', 'codsence'],
+        ['idsesionsence', XMLDB_TYPE_CHAR, '255', 'idsesionalumno'],
         ['firstacess', XMLDB_TYPE_INTEGER, '10', 'idsesionsence'],
         ['timeend', XMLDB_TYPE_INTEGER, '10', 'firstacess'],
         ['closealertsent', XMLDB_TYPE_INTEGER, '10', 'timeend'],
@@ -44,6 +46,14 @@ function xmldb_block_moodle_sence_ensure_schema(): void {
         $field = new xmldb_field($f[0], $f[1], $f[2], null, null, null, null, $f[3]);
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
+        }
+    }
+
+    // Manual RCE: IdSesion* hasta 149; ampliar columnas heredadas de 100.
+    foreach (['idsesionalumno', 'idsesionsence'] as $fname) {
+        $field = new xmldb_field($fname, XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->change_field_precision($table, $field);
         }
     }
 }

@@ -44,6 +44,29 @@ $autoredirect = false;
 echo $OUTPUT->header();
 
 if ($iserror) {
+    $run = block_moodle_sence_resolve_user_run($USER);
+    $codes = block_moodle_sence_resolve_runtime_codes($config, $courseid, (int) $USER->id);
+    $opensession = session_manager::get_open_session_by_alumno_id(
+        (string) ($post['IdSesionAlumno'] ?? ''),
+        $run
+    );
+    if (!$opensession) {
+        $opensession = session_manager::get_open_session($run, $codes['codigocurso']);
+    }
+    $waslogout = ($opensession && session_manager::is_open_record($opensession));
+    if ($waslogout && empty($post['IdSesionSence']) && !empty($opensession->idsesionsence)) {
+        $post['IdSesionSence'] = $opensession->idsesionsence;
+    }
+
+    // 301/304/305/310 al cerrar: SENCE ya no tiene esa sesión (venció o ya cerrada).
+    $staleglosas = [301, 304, 305, 310];
+    $staleclose = $waslogout && in_array($glosa, $staleglosas, true);
+    if ($staleclose) {
+        session_manager::close_session((int) $opensession->id);
+        echo $OUTPUT->notification(get_string('logout_stale_closed', 'block_moodle_sence'), 'warning');
+        $autoredirect = true;
+    }
+
     $ctx = block_moodle_sence_format_error_context($course, $USER, $config, $glosa, $post);
     block_moodle_sence_log_error(
         $courseid,
@@ -57,16 +80,19 @@ if ($iserror) {
     if ($glosa === 100) {
         $msg = get_string('glosa100', 'block_moodle_sence');
         echo html_writer::div($msg, 'alert alert-danger block-moodle-sence-callback-error', ['role' => 'alert']);
-    } else {
+    } else if (!$staleclose) {
         echo html_writer::div($ctx['html'], 'block-moodle-sence-callback-error', ['role' => 'alert']);
     }
 
-    if (!empty($config->correoalerta)) {
+    if (!empty($config->correoalerta) && $glosa !== 100) {
         $subject = get_string('alert_email_subject', 'block_moodle_sence', (object) [
             'code' => $glosa,
             'shortname' => $course->shortname,
         ]);
         $body = $ctx['text'];
+        if ($staleclose) {
+            $body .= "\n\n" . get_string('logout_stale_closed_email', 'block_moodle_sence');
+        }
         if (in_array($glosa, [300, 304, 305], true)) {
             $body .= "\n\n" . get_string('alert_email_sence_support', 'block_moodle_sence');
         }
@@ -82,6 +108,7 @@ if ($iserror) {
             'runalumno' => $post['RunAlumno'] ?? block_moodle_sence_resolve_user_run($USER),
             'codcurso' => $codes['codigocurso'],
             'idaccion' => $codes['idaccion'],
+            'codsence' => $codes['codsence'],
             'idsesionalumno' => $post['IdSesionAlumno'] ?? '',
             'idsesionsence' => $idsesionsence,
         ];

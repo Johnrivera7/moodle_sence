@@ -394,6 +394,7 @@ function block_moodle_sence_format_error_context(
         'zona' => $post['ZonaHoraria'] ?? '',
         'linea' => $post['LineaCapacitacion'] ?? ($config->lineasdecap ?? 3),
         'idsesionalumno' => $post['IdSesionAlumno'] ?? '',
+        'idsesionsence' => $post['IdSesionSence'] ?? '—',
     ];
 
     $text = get_string('senceerror_detail_text', 'block_moodle_sence', (object) array_merge(
@@ -524,7 +525,7 @@ function block_moodle_sence_get_course_block_config(int $courseid): ?\stdClass {
 }
 
 /**
- * Duración máxima de sesión: bloque, o default del plugin (10800).
+ * Duración del cronómetro: bloque, o default del plugin (2 horas).
  *
  * @param \stdClass|null $config
  * @return int
@@ -534,7 +535,41 @@ function block_moodle_sence_resolve_session_timeout(?\stdClass $config): int {
         return (int) $config->sencetimeout;
     }
     $global = (int) get_config('block_moodle_sence', 'defaultsencetimeout');
-    return $global > 0 ? $global : 10800;
+    return $global > 0 ? $global : 7200;
+}
+
+/**
+ * Tope desde el inicio: pasadas estas horas no se intenta cerrar en SENCE (default 3 h).
+ *
+ * @return int
+ */
+function block_moodle_sence_resolve_stale_after(): int {
+    $stale = (int) get_config('block_moodle_sence', 'sessionstaleafter');
+    return $stale > 0 ? $stale : 10800;
+}
+
+/**
+ * Segundos transcurridos desde el inicio de la sesión local.
+ *
+ * @param \stdClass $record
+ * @return int
+ */
+function block_moodle_sence_session_elapsed(\stdClass $record): int {
+    $start = (int) ($record->firstacess ?? 0);
+    if ($start <= 0) {
+        return PHP_INT_MAX;
+    }
+    return max(0, time() - $start);
+}
+
+/**
+ * Sesión más antigua que el tope global: SENCE ya no la tendría; hay que iniciar otra.
+ *
+ * @param \stdClass $record
+ * @return bool
+ */
+function block_moodle_sence_is_session_stale(\stdClass $record): bool {
+    return block_moodle_sence_session_elapsed($record) >= block_moodle_sence_resolve_stale_after();
 }
 
 /**
@@ -813,9 +848,18 @@ function block_moodle_sence_build_logout_fields(
         $userid = (int) $USER->id;
     }
     $codes = block_moodle_sence_resolve_runtime_codes($config, $courseid, $userid);
+    // Reutilizar exactamente los códigos del inicio (manual RCE: mismo CodSence/CodigoCurso/IdSesion*).
+    $codsence = trim((string) ($record->codsence ?? ''));
+    if ($codsence === '') {
+        $codsence = $codes['codsence'];
+    }
+    $codigocurso = trim((string) ($record->codcurso ?? ''));
+    if ($codigocurso === '') {
+        $codigocurso = $codes['codigocurso'];
+    }
     list($codsence, $codigocurso) = block_moodle_sence_apply_testmode_codes(
-        $codes['codsence'],
-        $codes['codigocurso']
+        $codsence,
+        $codigocurso
     );
 
     $success = block_moodle_sence_callback_url($courseid, $instanceid, 'success');

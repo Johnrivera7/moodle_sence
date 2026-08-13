@@ -4,7 +4,7 @@ namespace block_moodle_sence\task;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Avisa por correo sesiones SENCE abiertas próximas a expirar o ya vencidas.
+ * Avisa por correo sesiones SENCE abiertas próximas a expirar (según inicio + tope).
  *
  * @package    block_moodle_sence
  * @copyright  2026 John Rivera
@@ -29,6 +29,7 @@ class notify_open_sessions extends \core\task\scheduled_task {
         if ($warnseconds <= 0) {
             $warnseconds = 900;
         }
+        $staleafter = \block_moodle_sence_resolve_stale_after();
 
         $candidates = $DB->get_records_select(
             'block_sence',
@@ -44,6 +45,16 @@ class notify_open_sessions extends \core\task\scheduled_task {
             if (!\block_moodle_sence\session_manager::is_open_record($rec)) {
                 continue;
             }
+
+            $elapsed = \block_moodle_sence_session_elapsed($rec);
+
+            // Pasado el tope (p. ej. 3 h desde el inicio): cerrar local, sin correo ni CerrarSesion.
+            if ($elapsed >= $staleafter) {
+                \block_moodle_sence\session_manager::close_session((int) $rec->id);
+                mtrace('SENCE stale session closed locally id=' . $rec->id . ' elapsed=' . $elapsed);
+                continue;
+            }
+
             $parsed = \block_moodle_sence_parse_session_alumno((string) $rec->idsesionalumno);
             if (!$parsed) {
                 continue;
@@ -60,13 +71,14 @@ class notify_open_sessions extends \core\task\scheduled_task {
             $timeout = \block_moodle_sence_resolve_session_timeout($blockcfg);
             $remaining = \block_moodle_sence\session_manager::seconds_remaining($rec, $timeout);
             $already = (int) ($rec->closealertsent ?? 0);
+            $remindfrom = max(0, $timeout - $warnseconds);
 
-            // Solo avisar cuando esté en ventana de alerta o vencida.
-            if ($remaining > $warnseconds) {
+            // Ventana: desde 15 min antes del cronómetro hasta el tope de vencimiento.
+            if ($elapsed < $remindfrom) {
                 continue;
             }
-            // Evitar reenvíos más frecuentes que cada 12 horas.
-            if ($already > 0 && (time() - $already) < 12 * HOURSECS) {
+            // Un recordatorio por sesión (según hora de inicio, no horario laboral).
+            if ($already > 0) {
                 continue;
             }
 
@@ -111,7 +123,7 @@ class notify_open_sessions extends \core\task\scheduled_task {
             }
 
             mtrace('SENCE close alert sent to ' . $user->email . ' course ' . $courseid .
-                ' remaining=' . $remaining);
+                ' remaining=' . $remaining . ' elapsed=' . $elapsed);
         }
     }
 }

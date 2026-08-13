@@ -98,6 +98,13 @@ class block_moodle_sence extends block_base {
         $forcer = !empty($config->forzarcierre);
         $prior = block_moodle_sence_has_prior_registration($run, $codes['codigocurso'], $codes['idaccion']);
 
+        // Pasado el tope global (p. ej. 3 h): no cerrar en SENCE; iniciar sesión nueva.
+        if ($session && session_manager::is_open_record($session)
+            && block_moodle_sence_is_session_stale($session)) {
+            session_manager::close_session((int) $session->id);
+            $session = null;
+        }
+
         $out = html_writer::start_div('block-moodle-sence');
 
         if (block_moodle_sence_is_test_mode()) {
@@ -142,7 +149,7 @@ class block_moodle_sence extends block_base {
             if ($expired) {
                 $out .= html_writer::div(
                     html_writer::tag('p', get_string('session_expired_title', 'block_moodle_sence'), ['class' => 'block-moodle-sence__title']) .
-                    html_writer::tag('p', get_string('session_expired_mustclose', 'block_moodle_sence'), ['class' => 'block-moodle-sence__text']),
+                    html_writer::tag('p', get_string('session_expired_clickclose', 'block_moodle_sence'), ['class' => 'block-moodle-sence__text']),
                     'block-moodle-sence-card block-moodle-sence-card--danger',
                     ['role' => 'alert']
                 );
@@ -497,6 +504,7 @@ JS;
   var warnAt = parseInt(box.getAttribute('data-warnat'), 10) || 1800;
   var msg = box.getAttribute('data-alert') || '';
   var expireMsg = box.getAttribute('data-expiremsg') || msg;
+  var startedExpired = left <= 0;
   var alerted = false;
   var closing = false;
 
@@ -584,7 +592,14 @@ JS;
       }
     }
     if (left <= 0) {
-      submitLogout();
+      // Si ya venía vencida (p. ej. sesión de ayer), no auto-POST a SENCE:
+      // esa sesión suele devolver 301. El alumno cierra con el botón.
+      if (startedExpired) {
+        showExpireGate();
+        showBanner(expireMsg);
+      } else {
+        submitLogout();
+      }
       return;
     }
     left -= 1;
